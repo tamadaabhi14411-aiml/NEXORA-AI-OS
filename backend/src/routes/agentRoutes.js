@@ -2,18 +2,17 @@ import express from "express";
 
 import {
   chatWithAI,
-  getChatHistory,
-  deleteHistory,
+  getHistory,
 } from "../controllers/agentController.js";
 
-import authMiddleware from "../middleware/authMiddleware.js";
+import protect from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/chat", authMiddleware, chatWithAI);
+// AI Chat
+router.post("/chat", protect, chatWithAI);
 
-router.get("/history", authMiddleware, getChatHistory);
-
-router.delete("/history", authMiddleware, deleteHistory);
+// Conversation History
+router.get("/history", protect, getHistory);
 
 export default router;
