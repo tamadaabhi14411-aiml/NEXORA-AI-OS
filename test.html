@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEXORA AI Test</title>
+</head>
+<body>
+
+<h2>NEXORA AI Test</h2>
+
+<input id="msg" placeholder="Ask anything..." size="50">
+
+<button onclick="send()">
+Send
+</button>
+
+<pre id="result"></pre>
+
+<script>
+async function send(){
+
+const message=document.getElementById("msg").value;
+
+const response=await fetch("http://localhost:5000/api/agent",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+message
+})
+
+});
+
+const data=await response.json();
+
+document.getElementById("result").textContent=
+JSON.stringify(data,null,2);
+
+}
+</script>
+
+</body>
+</html>
