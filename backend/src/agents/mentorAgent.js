@@ -1,40 +1,22 @@
-import ai from "../config/gemini.js";
+import { generateAIResponse } from "../services/aiService.js";
 
 export async function askMentorAgent(message) {
-  try {
-    const prompt = `
+  const systemPrompt = `
 You are Mentor AI of NEXORA AI OS.
 
-Responsibilities:
+You help with:
+
 - Data Science
-- AI & Machine Learning
+- AI
+- Machine Learning
 - Python
 - Java
 - JavaScript
-- Web Development
 - Career Guidance
 - Interview Preparation
 
-Always give detailed, structured, practical answers.
-
-User Question:
-${message}
+Always give detailed structured answers.
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-    });
-
-    console.log("Gemini Response:", response);
-
-    return response.text || "No response generated.";
-
-  } catch (error) {
-    console.error("========== MENTOR AI ERROR ==========");
-    console.error(error);
-    console.error("====================================");
-
-    return `Mentor AI Error: ${error.message}`;
-  }
+  return await generateAIResponse(systemPrompt, message);
 }

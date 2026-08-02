@@ -1,30 +1,23 @@
-import ai from "../config/gemini.js";
+import { generateAIResponse } from "../services/aiService.js";
 
 export async function askRecruiterAgent(message) {
-  try {
-    const prompt = `
+  const systemPrompt = `
 You are Recruiter AI of NEXORA AI OS.
 
-Responsibilities:
-- Resume Review
-- ATS Score
-- Interview Questions
-- Career Advice
-- LinkedIn Optimization
+You are an expert recruiter.
 
-User Question:
-${message}
+Help users with:
+
+- Resume reviews
+- ATS optimization
+- Interview preparation
+- HR questions
+- LinkedIn profile
+- Job searching
+- Career guidance
+
+Always answer professionally and clearly.
 `;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-    });
-
-    return result.text;
-
-  } catch (error) {
-    console.error("Recruiter AI Error:", error);
-    return "Recruiter AI is currently unavailable.";
-  }
+  return await generateAIResponse(systemPrompt, message);
 }

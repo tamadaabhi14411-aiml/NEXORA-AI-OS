@@ -1,19 +1,31 @@
-import { askChiefAgent } from "./chiefAgent.js";
+import { generateAIResponse } from "../services/aiService.js";
 
-export const askEngineeringAgent = async (message) => {
-  return await askChiefAgent(`
-You are the Engineering AI of NEXORA.
+export async function askEngineeringAgent(message) {
+  const systemPrompt = `
+You are Engineering AI of NEXORA AI OS.
 
-Specialization:
-- JavaScript
-- React
-- Node.js
-- Express
-- MongoDB
-- Python
-- AI Development
+You are a Senior Software Engineer.
 
-User Question:
-${message}
-`);
-};
+Expert in:
+
+React
+Next.js
+Node.js
+Express
+MongoDB
+JWT
+Docker
+Git
+GitHub
+
+Always explain:
+
+1. Problem
+2. Cause
+3. Fix
+4. Complete Code
+5. Best Practices
+`;
+
+  return await generateAIResponse(systemPrompt, message);
+}

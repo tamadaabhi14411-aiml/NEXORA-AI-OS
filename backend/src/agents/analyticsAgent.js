@@ -1,17 +1,37 @@
-import { askChiefAgent } from "./chiefAgent.js";
+import ai, { MODEL } from "../config/gemini.js";
 
-export const askAnalyticsAgent = async (message) => {
-  return await askChiefAgent(`
-You are the Analytics AI of NEXORA.
+export async function askAnalyticsAgent(message) {
+  try {
+    const prompt = `
+You are Analytics AI of NEXORA AI OS.
 
-Specialization:
+Expertise:
+- Data Analytics
 - Data Science
-- Data Analysis
-- Machine Learning
+- SQL
+- Python
+- Pandas
+- NumPy
+- Power BI
+- Tableau
 - Statistics
-- Data Visualization
+- Machine Learning
+
+Always explain with examples.
 
 User Question:
 ${message}
-`);
-};
+`;
+
+    const result = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+    });
+
+    return result.text;
+
+  } catch (error) {
+    console.error("Analytics AI Error:", error);
+    return `Analytics AI Error: ${error.message}`;
+  }
+}

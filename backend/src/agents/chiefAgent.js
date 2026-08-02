@@ -1,40 +1,39 @@
-import ai from "../config/gemini.js";
 import { routeToAgent } from "./orchestrator.js";
+import { generateAIResponse } from "../services/aiService.js";
 
 export async function askChiefAgent(message, history = []) {
 
-  // Let specialist agents answer first
+  // Check specialist agents first
   const routedResponse = await routeToAgent(message);
 
   if (routedResponse) {
     return routedResponse;
   }
 
-  try {
+  const historyText = history
+    .map((m) => `${m.role}: ${m.content}`)
+    .join("\n");
 
-    const prompt = `
+  const systemPrompt = `
 You are Chief AI of NEXORA AI OS.
 
+You are the master AI assistant.
+
+Responsibilities:
+
+- General conversations
+- Personal memory
+- Productivity
+- Study planning
+- Career advice
+- Project management
+
+Always answer professionally.
+
 Conversation History:
-${history
-  .map((m) => `${m.role}: ${m.content}`)
-  .join("\n")}
 
-Current User Message:
-${message}
-
-Respond naturally while remembering the previous conversation.
+${historyText}
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-    });
-
-    return response.text;
-
-  } catch (error) {
-    console.error("Chief AI Error:", error);
-    return "Chief AI is currently unavailable.";
-  }
+  return await generateAIResponse(systemPrompt, message);
 }

@@ -1,14 +1,8 @@
 import ChatHistory from "../models/ChatHistory.js";
 import { askChiefAgent } from "../agents/chiefAgent.js";
-import {
-  getConversation,
-  saveConversation,
-  clearConversation,
-} from "../services/conversationService.js";
+import { extractMemory } from "../utils/memoryExtractor.js";
+import { saveMemory } from "../services/memoryService.js";
 
-// ===============================
-// Chat with AI
-// ===============================
 export const chatWithAI = async (req, res) => {
   try {
     const { message } = req.body;
@@ -20,83 +14,42 @@ export const chatWithAI = async (req, res) => {
       });
     }
 
-    const userId = req.user._id;
-
     // Get previous conversation
-    const conversation = await getConversation(userId);
+    const history = await ChatHistory.find({
+      user: req.user.id,
+    }).sort({ createdAt: 1 });
 
-    // Ask Chief AI with conversation history
-    const reply = await askChiefAgent(
-      message,
-      conversation.messages
-    );
+    // Ask Chief AI
+    const reply = await askChiefAgent(message, history);
 
-    // Save current conversation
-    await saveConversation(userId, "user", message);
-    await saveConversation(userId, "assistant", reply);
+    // Extract and save memory
+    const updates = extractMemory(message);
 
-    // Save chat history
+    if (Object.keys(updates).length > 0) {
+      await saveMemory(req.user.id, updates);
+    }
+
+    // Save user message
     await ChatHistory.create({
-      user: userId,
-      message,
-      reply,
+      user: req.user.id,
+      role: "user",
+      content: message,
     });
 
-    return res.json({
+    // Save AI reply
+    await ChatHistory.create({
+      user: req.user.id,
+      role: "assistant",
+      content: reply,
+    });
+
+    return res.status(200).json({
       success: true,
       reply,
     });
-
   } catch (error) {
     console.error("Agent Controller Error:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// ===============================
-// Chat History
-// ===============================
-export const getHistory = async (req, res) => {
-  try {
-    const history = await ChatHistory.find({
-      user: req.user._id,
-    }).sort({ createdAt: 1 });
-
-    return res.json({
-      success: true,
-      count: history.length,
-      history,
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// ===============================
-// Delete Chat History
-// ===============================
-export const deleteHistory = async (req, res) => {
-  try {
-    await ChatHistory.deleteMany({
-      user: req.user._id,
-    });
-
-    await clearConversation(req.user._id);
-
-    return res.json({
-      success: true,
-      message: "Chat history deleted successfully.",
-    });
-
-  } catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message,

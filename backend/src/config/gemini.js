@@ -1,16 +1,16 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("❌ GEMINI_API_KEY is missing in .env");
-}
+export const MODEL = "deepseek/deepseek-chat-v3-0324:free";
 
-console.log("🔑 Gemini API Loaded");
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+const ai = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
 });
+
+console.log("✅ OpenRouter Loaded");
+console.log("Using Model:", MODEL);
 
 export default ai;
