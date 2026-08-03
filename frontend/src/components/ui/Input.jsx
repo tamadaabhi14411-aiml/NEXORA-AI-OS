@@ -4,7 +4,6 @@ function Input({
     value,
     onChange,
     name,
-    className = "",
   }) {
     return (
       <input
@@ -13,7 +12,7 @@ function Input({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`
+        className="
           w-full
           rounded-xl
           border
@@ -24,13 +23,12 @@ function Input({
           text-white
           placeholder:text-zinc-500
           outline-none
-          transition-all
+          transition
           duration-200
           focus:border-blue-500
           focus:ring-2
           focus:ring-blue-500/20
-          ${className}
-        `}
+        "
       />
     );
   }
