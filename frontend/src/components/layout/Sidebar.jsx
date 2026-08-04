@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -6,6 +7,8 @@ import {
   Briefcase,
   Users,
   Settings,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const menuItems = [
@@ -41,18 +44,42 @@ const menuItems = [
   },
 ];
 
-function Sidebar() {
+function Sidebar({ collapsed, setCollapsed }) {
   return (
-    <aside className="w-64 border-r border-zinc-800 bg-zinc-950">
-      {/* Logo */}
-      <div className="border-b border-zinc-800 p-6">
-        <h1 className="text-2xl font-bold text-blue-500">
-          NEXORA
-        </h1>
+    <motion.aside
+      animate={{
+        width: collapsed ? 80 : 256,
+      }}
+      transition={{
+        duration: 0.3,
+        ease: "easeInOut",
+      }}
+      className="min-h-screen overflow-hidden border-r border-zinc-800 bg-zinc-950"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-zinc-800 p-5">
+        {!collapsed && (
+          <div>
+            <h1 className="text-xl font-bold text-blue-500">
+              NEXORA
+            </h1>
 
-        <p className="text-xs text-zinc-500">
-          AI Operating System
-        </p>
+            <p className="text-xs text-zinc-500">
+              AI Operating System
+            </p>
+          </div>
+        )}
+
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="rounded-lg p-2 transition hover:bg-zinc-800"
+        >
+          {collapsed ? (
+            <ChevronRight size={18} />
+          ) : (
+            <ChevronLeft size={18} />
+          )}
+        </button>
       </div>
 
       {/* Navigation */}
@@ -66,7 +93,9 @@ function Sidebar() {
                 <NavLink
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
+                    `flex items-center ${
+                      collapsed ? "justify-center" : "gap-3"
+                    } rounded-xl px-4 py-3 transition-all ${
                       isActive
                         ? "bg-blue-600 text-white"
                         : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
@@ -74,14 +103,15 @@ function Sidebar() {
                   }
                 >
                   <Icon size={20} />
-                  <span>{item.name}</span>
+
+                  {!collapsed && <span>{item.name}</span>}
                 </NavLink>
               </li>
             );
           })}
         </ul>
       </nav>
-    </aside>
+    </motion.aside>
   );
 }
 
