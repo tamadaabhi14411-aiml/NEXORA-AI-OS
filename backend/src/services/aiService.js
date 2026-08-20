@@ -19,7 +19,13 @@ export async function generateAIResponse(systemPrompt, userPrompt) {
       ],
     });
 
-    return completion.choices[0].message.content;
+    const reply = completion?.choices?.[0]?.message?.content;
+
+if (!reply) {
+  throw new Error("AI service returned an invalid response.");
+}
+
+return reply;
   } catch (error) {
     console.log("\n========== OPENROUTER ERROR ==========\n");
 
