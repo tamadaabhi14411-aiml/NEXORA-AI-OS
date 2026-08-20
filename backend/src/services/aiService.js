@@ -1,7 +1,7 @@
 import client from "../config/openrouter.js";
 
-export const MODEL = "google/gemma-4-26b-a4b-it:free";
-// If this model doesn't work later, we can change it easily.
+export const MODEL = "openrouter/free";
+// Free model router automatically selects an available free model.
 
 export async function generateAIResponse(systemPrompt, userPrompt) {
   try {
