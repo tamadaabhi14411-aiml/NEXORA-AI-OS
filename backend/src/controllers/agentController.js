@@ -7,17 +7,25 @@ export const chatWithAI = async (req, res) => {
 
     const aiResponse = await askChiefAgent(message);
 
+    const result =
+  typeof aiResponse === "string"
+    ? {
+        agent: "Chief AI",
+        reply: aiResponse,
+      }
+    : aiResponse;
+
     const conversation = await Conversation.create({
       user: req.user.id,
       message,
-      agent: aiResponse.agent,
-      reply: aiResponse.reply,
+      agent: result.agent,
+      reply: result.reply,
     });
 
     res.status(200).json({
       success: true,
       conversation,
-      ...aiResponse,
+      ...result,
     });
   } catch (error) {
     console.error(error);
