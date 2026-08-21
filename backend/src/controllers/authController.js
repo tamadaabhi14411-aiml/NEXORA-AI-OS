@@ -5,6 +5,7 @@ import User from "../models/User.js";
 // =========================
 // Register User
 // =========================
+
 export const register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -45,7 +46,6 @@ export const register = async (req, res) => {
         level: user.level,
       },
     });
-
   } catch (error) {
     console.error(error);
 
@@ -59,9 +59,18 @@ export const register = async (req, res) => {
 // =========================
 // Login User
 // =========================
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Check required fields before database/password operations
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide email and password.",
+      });
+    }
 
     const user = await User.findOne({ email });
 
@@ -102,7 +111,6 @@ export const login = async (req, res) => {
         level: user.level,
       },
     });
-
   } catch (error) {
     console.error(error);
 
@@ -116,14 +124,13 @@ export const login = async (req, res) => {
 // =========================
 // Get User Profile
 // =========================
+
 export const getProfile = async (req, res) => {
   try {
-
     res.status(200).json({
       success: true,
       user: req.user,
     });
-
   } catch (error) {
     console.error(error);
 
