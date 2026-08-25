@@ -1,19 +1,26 @@
-import api from "./api";
+import API from "../api/api";
 
-const login = async (credentials) => {
-  const response = await api.post("/auth/login", credentials);
+const login = async (email, password) => {
+  const response = await API.post("/auth/login", {
+    email,
+    password,
+  });
 
   return response.data;
 };
 
-const signup = async (userData) => {
-  const response = await api.post("/auth/signup", userData);
+const signup = async (name, email, password) => {
+  const response = await API.post("/auth/signup", {
+    name,
+    email,
+    password,
+  });
 
   return response.data;
 };
 
 const getProfile = async () => {
-  const response = await api.get("/auth/profile");
+  const response = await API.get("/auth/profile");
 
   return response.data;
 };
