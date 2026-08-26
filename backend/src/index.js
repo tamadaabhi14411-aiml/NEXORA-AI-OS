@@ -5,7 +5,7 @@ import dns from "dns";
 import express from "express";
 import cors from "cors";
 
-// ✅ Temporary import to verify AI Client
+// AI Client
 import "./ai/aiClient.js";
 
 import connectDB from "./config/db.js";
@@ -21,16 +21,32 @@ dns.setServers([
 
 const app = express();
 
-// Connect MongoDB
-connectDB();
-
+// =========================
 // Middleware
-app.use(cors());
+// =========================
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
+    ],
+    credentials: true
+  })
+);
+
 app.use(express.json());
+
+// =========================
+// Connect MongoDB
+// =========================
+
+connectDB();
 
 // =========================
 // Routes
 // =========================
+
 app.use("/api/auth", authRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api/user", userRoutes);
@@ -38,6 +54,7 @@ app.use("/api/user", userRoutes);
 // =========================
 // Root Route
 // =========================
+
 app.get("/", (req, res) => {
   res.send("🚀 NEXORA AI OS Backend is Running");
 });
@@ -45,19 +62,22 @@ app.get("/", (req, res) => {
 // =========================
 // Health Check
 // =========================
+
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
     message: "NEXORA Backend is Healthy",
-    database: "Connected",
+    database: "Connected"
   });
 });
 
 // =========================
 // Start Server
 // =========================
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔥 Server running on port ${PORT}`);
+  console.log(`🌐 Network access enabled on port ${PORT}`);
 });
