@@ -1,41 +1,54 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
 import api from "../services/api";
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
 
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
-    api
-      .get("/auth/profile")
-      .then((res) => {
-        setUser(res.data.user);
-      })
-      .catch(() => {
+      try {
+        const response = await api.get("/auth/profile");
+        setUser(response.data.user);
+      } catch (error) {
+        console.error("Profile request failed:", error);
         localStorage.removeItem("token");
         setUser(null);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    checkAuth();
   }, []);
 
   const login = async (token) => {
+    if (!token) {
+      throw new Error("JWT token was not received.");
+    }
+
     localStorage.setItem("token", token);
 
     try {
-      const res = await api.get("/auth/profile");
-      setUser(res.data.user);
-      return res.data.user;
+      const response = await api.get("/auth/profile");
+      setUser(response.data.user);
+      return response.data.user;
     } catch (error) {
       localStorage.removeItem("token");
       setUser(null);
@@ -60,6 +73,8 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext);
+}

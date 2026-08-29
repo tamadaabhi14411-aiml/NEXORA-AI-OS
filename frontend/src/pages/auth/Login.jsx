@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import AuthLayout from "../../layouts/AuthLayout";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+
 import authService from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 
@@ -33,29 +35,38 @@ function Login() {
         password,
       });
 
-      const token = data.token || data.accessToken || data.jwt;
+      const token =
+        data.token ||
+        data.accessToken ||
+        data.jwt;
 
       if (!token) {
-        throw new Error("Login response did not contain a JWT token.");
+        throw new Error(
+          "Login response did not contain a JWT token."
+        );
       }
 
       await login(token);
 
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      console.error("Login error:", err);
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      console.error("Login error:", error);
 
-      if (err.response) {
+      if (error.response) {
         setError(
-          err.response.data?.message ||
-            "Invalid email or password."
+          error.response.data?.message ||
+            `Login failed (${error.response.status}).`
         );
-      } else if (err.request) {
+      } else if (error.request) {
         setError(
-          "Unable to connect to the backend. Make sure the backend is running on port 5000."
+          "Unable to connect to the backend."
         );
       } else {
-        setError(err.message || "Login failed. Please try again.");
+        setError(
+          error.message || "Login failed."
+        );
       }
     } finally {
       setLoading(false);
@@ -67,12 +78,17 @@ function Login() {
       title="Welcome Back"
       subtitle="Sign in to continue to NEXORA AI OS"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
         <Input
           type="email"
           placeholder="Email Address"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) =>
+            setEmail(event.target.value)
+          }
           disabled={loading}
         />
 
@@ -80,7 +96,9 @@ function Login() {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) =>
+            setPassword(event.target.value)
+          }
           disabled={loading}
         />
 
@@ -90,7 +108,10 @@ function Login() {
           </div>
         )}
 
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          disabled={loading}
+        >
           {loading ? "Signing in..." : "Login"}
         </Button>
       </form>
