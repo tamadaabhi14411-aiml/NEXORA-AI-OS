@@ -5,3 +5,7 @@ Internal AI Operating System for the NEXORA startup.
 Version: 0.1.0
 
 Status: Under Development
+
+TAMADA.ABHI
+YALLATURI.NAGAPRADEEP
+MEKA.SUDHARAM
