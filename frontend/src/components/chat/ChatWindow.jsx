@@ -1,33 +1,46 @@
 import ChatMessage from "./ChatMessage";
 
-const messages = [
-  {
-    id: 1,
-    sender: "ai",
-    text: "Hello! 👋 Welcome to NEXORA AI OS. How can I help you today?",
-  },
-  {
-    id: 2,
-    sender: "user",
-    text: "Can you create a React dashboard UI?",
-  },
-  {
-    id: 3,
-    sender: "ai",
-    text: "Absolutely! I can help you build a premium dashboard using React, Tailwind CSS, Framer Motion, and reusable components.",
-  },
-];
-
-function ChatWindow() {
+function ChatWindow({ messages, sending }) {
   return (
     <div className="flex-1 space-y-6 overflow-y-auto py-6">
-      {messages.map((message) => (
+      {messages.length === 0 && !sending && (
+        <div className="flex h-full items-center justify-center text-center">
+          <div>
+            <p className="text-lg font-medium text-zinc-300">
+              Start a conversation
+            </p>
+
+            <p className="mt-2 text-sm text-zinc-500">
+              Ask NEXORA AI anything.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {messages.map((message, index) => (
         <ChatMessage
-          key={message.id}
-          sender={message.sender}
-          text={message.text}
+          key={message.id || message._id || index}
+          sender={
+            message.sender ||
+            message.role ||
+            (message.user ? "user" : "ai")
+          }
+          text={
+            message.text ||
+            message.content ||
+            message.message ||
+            message.response ||
+            ""
+          }
         />
       ))}
+
+      {sending && (
+        <ChatMessage
+          sender="ai"
+          text="NEXORA AI is thinking..."
+        />
+      )}
     </div>
   );
 }
