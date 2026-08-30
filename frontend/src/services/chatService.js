@@ -1,25 +1,28 @@
 import api from "./api";
 
-const chatService = {
-  sendMessage: async (message) => {
-    const response = await api.post("/chat", {
+const sendMessage = async (message) => {
+  const response = await api.post(
+    "/agent/chat",
+    {
       message,
-    });
+    },
+    {
+      timeout: 60000,
+    }
+  );
 
-    return response.data;
-  },
+  return response.data;
+};
 
-  getHistory: async () => {
-    const response = await api.get("/history");
+const getHistory = async () => {
+  const response = await api.get("/agent/history");
 
-    return response.data;
-  },
+  return response.data;
+};
 
-  deleteHistory: async () => {
-    const response = await api.delete("/history");
-
-    return response.data;
-  },
+const chatService = {
+  sendMessage,
+  getHistory,
 };
 
 export default chatService;
