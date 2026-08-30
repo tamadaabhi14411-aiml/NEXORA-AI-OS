@@ -5,6 +5,14 @@ export const chatWithAI = async (req, res) => {
   try {
     const { message } = req.body;
 
+    // Validate message before sending it to the AI agent
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required.",
+      });
+    }
+
     const aiResponse = await askChiefAgent(message);
 
     const result =
