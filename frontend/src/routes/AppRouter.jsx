@@ -9,6 +9,7 @@ import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Chat from "../pages/chat/Chat";
+import ResumeAI from "../pages/career/ResumeAI";
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
@@ -49,6 +50,16 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <Chat />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Resume AI */}
+        <Route
+          path="/career/resume-ai"
+          element={
+            <ProtectedRoute>
+              <ResumeAI />
             </ProtectedRoute>
           }
         />

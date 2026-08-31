@@ -29,7 +29,7 @@ const menuItems = [
   },
   {
     name: "Career",
-    path: "/career",
+    path: "/career/resume-ai",
     icon: Briefcase,
   },
   {
@@ -71,6 +71,7 @@ function Sidebar({ collapsed, setCollapsed }) {
         )}
 
         <button
+          type="button"
           onClick={() => setCollapsed(!collapsed)}
           className="rounded-lg p-2 transition hover:bg-zinc-800"
         >
@@ -104,7 +105,9 @@ function Sidebar({ collapsed, setCollapsed }) {
                 >
                   <Icon size={20} />
 
-                  {!collapsed && <span>{item.name}</span>}
+                  {!collapsed && (
+                    <span>{item.name}</span>
+                  )}
                 </NavLink>
               </li>
             );
