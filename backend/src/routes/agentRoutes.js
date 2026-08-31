@@ -4,6 +4,7 @@ import {
   chatWithAI,
   getHistory,
   getChatHistory,
+  getConversationById,
   deleteHistory,
 } from "../controllers/agentController.js";
 
@@ -17,7 +18,11 @@ router.post("/chat", protect, chatWithAI);
 // Conversation History
 router.get("/history", protect, getHistory);
 
+// Single Conversation
+router.get("/history/:conversationId", protect, getConversationById);
+
 router.get("/chat-history", protect, getChatHistory);
+
 router.delete("/history", protect, deleteHistory);
 
 export default router;
