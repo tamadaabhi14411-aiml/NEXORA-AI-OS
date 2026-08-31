@@ -20,9 +20,18 @@ const getHistory = async () => {
   return response.data;
 };
 
+const getConversation = async (conversationId) => {
+  const response = await api.get(
+    `/agent/history/${conversationId}`
+  );
+
+  return response.data;
+};
+
 const chatService = {
   sendMessage,
   getHistory,
+  getConversation,
 };
 
 export default chatService;
