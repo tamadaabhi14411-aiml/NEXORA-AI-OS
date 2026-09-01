@@ -26,7 +26,8 @@ const buildProfileData = (user, memory) => {
       ? memory.projects
       : [],
 
-    // Not currently stored in Memory model
+    // These fields are not currently stored
+    // in the Memory model.
     achievements: [],
     education: [],
     experience: [],
@@ -35,7 +36,7 @@ const buildProfileData = (user, memory) => {
 };
 
 // ============================================
-// Helper: Check Career Evidence
+// Helper: Check Available Career Evidence
 // ============================================
 
 const hasCareerEvidence = (profileData) => {
@@ -59,7 +60,7 @@ const hasCareerEvidence = (profileData) => {
 };
 
 // ============================================
-// Helper: AI Error Handler
+// Helper: AI Error Response
 // ============================================
 
 const handleAIError = (error, res, operation) => {
@@ -71,6 +72,7 @@ const handleAIError = (error, res, operation) => {
       ""
   ).toLowerCase();
 
+  // AI rate limit / quota
   if (
     error?.status === 429 ||
     error?.response?.status === 429 ||
@@ -85,6 +87,18 @@ const handleAIError = (error, res, operation) => {
     });
   }
 
+  // Invalid AI response
+  if (
+    errorMessage.includes("invalid response") ||
+    errorMessage.includes("invalid json")
+  ) {
+    return res.status(502).json({
+      success: false,
+      message: "AI returned an invalid response.",
+    });
+  }
+
+  // Generic error
   return res.status(500).json({
     success: false,
     message: `Failed to ${operation.toLowerCase()}.`,
@@ -93,7 +107,7 @@ const handleAIError = (error, res, operation) => {
 
 // ============================================
 // TASK 1
-// Targeted Resume / Profile Match Analysis
+// Targeted Resume AI Analysis
 // ============================================
 
 export const analyzeResumeTarget = async (req, res) => {
@@ -101,7 +115,7 @@ export const analyzeResumeTarget = async (req, res) => {
     const { company, role } = req.body;
 
     // ----------------------------------------
-    // Validate input
+    // Validate target information
     // ----------------------------------------
 
     if (
@@ -148,7 +162,7 @@ export const analyzeResumeTarget = async (req, res) => {
     );
 
     // ----------------------------------------
-    // Check career data
+    // Check career evidence
     // ----------------------------------------
 
     if (!hasCareerEvidence(profileData)) {
@@ -160,40 +174,38 @@ export const analyzeResumeTarget = async (req, res) => {
     }
 
     // ----------------------------------------
-    // AI Analysis Prompt
+    // AI Analysis System Prompt
     // ----------------------------------------
 
     const systemPrompt = `
 You are Resume AI of NEXORA AI OS.
 
-Analyze the user's EXISTING career evidence
-against the requested target company and target role.
+Your task is to analyze a user's EXISTING career evidence
+against a target company and target role.
 
 STRICT RULES:
 
-1. Use ONLY information present in USER CAREER DATA.
+1. Use ONLY the information supplied in USER CAREER DATA.
 2. NEVER invent skills.
 3. NEVER invent projects.
-4. NEVER invent experience.
+4. NEVER invent work experience.
 5. NEVER invent achievements.
 6. NEVER invent education.
 7. NEVER invent certifications.
 8. NEVER invent technologies.
-9. NEVER claim the user worked for the target company.
-10. Do not fabricate company-specific requirements.
-11. Do not fabricate a job description.
-12. Skill gaps must be reasonable for the requested role.
-13. Recommendations must be based on the user's actual evidence.
-14. Match score must be between 0 and 100.
-15. Calculate matchScore based on how strongly the user's
-    existing skills, projects, career information and other
-    supplied evidence align with the requested role.
-16. Do not give a high score simply because information is missing.
-17. If evidence is limited, reduce the match score accordingly.
-18. Return ONLY valid JSON.
-19. Do NOT use markdown code fences.
+9. NEVER claim that the user worked for the target company.
+10. If evidence is missing, explicitly say that evidence is missing.
+11. Skill gaps may only be based on reasonable expectations
+    for the target role.
+12. Do not fabricate company-specific requirements.
+13. Do not fabricate job descriptions.
+14. Recommendations must be practical and evidence-based.
+15. Match score must be between 0 and 100.
+16. The match score must reflect ONLY the supplied user evidence.
+17. Return ONLY valid JSON.
+18. Do not use markdown code fences.
 
-Return exactly this structure:
+Return exactly this JSON structure:
 
 {
   "target": {
@@ -221,7 +233,7 @@ ${JSON.stringify(profileData, null, 2)}
 `;
 
     // ----------------------------------------
-    // Call AI
+    // Generate AI response
     // ----------------------------------------
 
     let aiResponse;
@@ -253,6 +265,11 @@ ${JSON.stringify(profileData, null, 2)}
         error
       );
 
+      console.error(
+        "Raw AI Analysis Response:",
+        aiResponse
+      );
+
       return res.status(502).json({
         success: false,
         message:
@@ -261,37 +278,28 @@ ${JSON.stringify(profileData, null, 2)}
     }
 
     // ----------------------------------------
-    // Validate matchScore
+    // Validate AI response structure
     // ----------------------------------------
 
-    const numericScore = Number(
-      analysis.matchScore
-    );
-
     if (
-      !Number.isFinite(numericScore) ||
-      numericScore < 0 ||
-      numericScore > 100
+      !analysis ||
+      typeof analysis !== "object" ||
+      !analysis.target ||
+      !Array.isArray(analysis.relevantStrengths) ||
+      !Array.isArray(analysis.skillGaps) ||
+      !Array.isArray(analysis.projectRelevance) ||
+      !Array.isArray(analysis.experienceRelevance) ||
+      !Array.isArray(analysis.recommendations)
     ) {
       return res.status(502).json({
         success: false,
         message:
-          "AI returned an invalid match score.",
+          "AI returned an incomplete analysis response.",
       });
     }
 
-    // Normalize response
-    analysis.matchScore = Math.round(
-      numericScore
-    );
-
-    analysis.target = {
-      company: targetCompany,
-      role: targetRole,
-    };
-
     // ----------------------------------------
-    // Return Analysis
+    // Return analysis
     // ----------------------------------------
 
     return res.status(200).json({
@@ -322,7 +330,7 @@ export const generateTargetedResume = async (
     const { company, role } = req.body;
 
     // ----------------------------------------
-    // Validate input
+    // Validate target information
     // ----------------------------------------
 
     if (
@@ -369,7 +377,7 @@ export const generateTargetedResume = async (
     );
 
     // ----------------------------------------
-    // Check career data
+    // Check career evidence
     // ----------------------------------------
 
     if (!hasCareerEvidence(profileData)) {
@@ -381,14 +389,14 @@ export const generateTargetedResume = async (
     }
 
     // ----------------------------------------
-    // Resume Generation Prompt
+    // Resume Generation System Prompt
     // ----------------------------------------
 
     const systemPrompt = `
 You are Resume AI of NEXORA AI OS.
 
-Generate targeted resume content for the supplied
-target company and target role.
+Generate targeted resume content for the supplied target
+company and target role.
 
 STRICT RULES:
 
@@ -400,20 +408,21 @@ STRICT RULES:
 6. NEVER invent education.
 7. NEVER invent certifications.
 8. NEVER invent technologies.
-9. NEVER claim the user worked for the target company.
+9. NEVER claim that the user worked for the target company.
 10. Do not create fake dates.
 11. Do not create fake employers.
 12. Do not create fake degrees.
-13. Do not create fake projects.
-14. Do not create fake achievements.
-15. Do not create fake qualifications.
+13. Do not create fake achievements.
+14. Do not create fake qualifications.
+15. Do not add information that is not present
+    in USER CAREER DATA.
 16. If a section has no evidence, return an empty array.
-17. Keep content professional and ATS-friendly.
+17. Keep the content professional and ATS-friendly.
 18. Preserve the truth of the user's existing evidence.
-19. Do NOT use markdown code fences.
+19. Do not use markdown code fences.
 20. Return ONLY valid JSON.
 
-Return exactly this structure:
+Return exactly this JSON structure:
 
 {
   "target": {
@@ -441,7 +450,7 @@ ${JSON.stringify(profileData, null, 2)}
 `;
 
     // ----------------------------------------
-    // Call AI
+    // Generate AI response
     // ----------------------------------------
 
     let aiResponse;
@@ -460,7 +469,7 @@ ${JSON.stringify(profileData, null, 2)}
     }
 
     // ----------------------------------------
-    // Parse JSON
+    // Parse AI JSON
     // ----------------------------------------
 
     let resume;
@@ -473,6 +482,11 @@ ${JSON.stringify(profileData, null, 2)}
         error
       );
 
+      console.error(
+        "Raw AI Resume Response:",
+        aiResponse
+      );
+
       return res.status(502).json({
         success: false,
         message:
@@ -480,14 +494,30 @@ ${JSON.stringify(profileData, null, 2)}
       });
     }
 
-    // Force requested target values
-    resume.target = {
-      company: targetCompany,
-      role: targetRole,
-    };
+    // ----------------------------------------
+    // Validate resume structure
+    // ----------------------------------------
+
+    if (
+      !resume ||
+      typeof resume !== "object" ||
+      !resume.target ||
+      typeof resume.summary !== "string" ||
+      !Array.isArray(resume.skills) ||
+      !Array.isArray(resume.projects) ||
+      !Array.isArray(resume.experience) ||
+      !Array.isArray(resume.education) ||
+      !Array.isArray(resume.achievements)
+    ) {
+      return res.status(502).json({
+        success: false,
+        message:
+          "AI returned an incomplete resume response.",
+      });
+    }
 
     // ----------------------------------------
-    // Return Resume
+    // Return generated resume
     // ----------------------------------------
 
     return res.status(200).json({
