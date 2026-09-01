@@ -1,19 +1,35 @@
 import Conversation from "../models/Conversation.js";
 import { askChiefAgent } from "../agents/chiefAgent.js";
+import { extractMemory } from "../utils/memoryExtractor.js";
+import { saveMemory } from "../services/memoryService.js";
+
+// ============================================
+// AI CHAT
+// ============================================
 
 export const chatWithAI = async (req, res) => {
   try {
     const { message } = req.body;
 
     // Validate message
-    if (!message || typeof message !== "string" || !message.trim()) {
+    if (
+      !message ||
+      typeof message !== "string" ||
+      !message.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message: "Message is required.",
       });
     }
 
-    const aiResponse = await askChiefAgent(message);
+    const cleanMessage = message.trim();
+
+    // ============================================
+    // Generate AI Response
+    // ============================================
+
+    const aiResponse = await askChiefAgent(cleanMessage);
 
     const result =
       typeof aiResponse === "string"
@@ -23,26 +39,63 @@ export const chatWithAI = async (req, res) => {
           }
         : aiResponse;
 
-    // Find existing conversation for the authenticated user
+    // ============================================
+    // Extract Career Memory
+    // ============================================
+
+    try {
+      const memoryUpdates = extractMemory(cleanMessage);
+
+      if (
+        memoryUpdates &&
+        Object.keys(memoryUpdates).length > 0
+      ) {
+        await saveMemory(
+          req.user._id,
+          memoryUpdates
+        );
+
+        console.log(
+          "Career memory updated successfully."
+        );
+      }
+    } catch (memoryError) {
+      // Memory failure should NOT break AI chat
+      console.error(
+        "Memory Save Error:",
+        memoryError
+      );
+    }
+
+    // ============================================
+    // Find Existing Conversation
+    // ============================================
+
     let conversation = await Conversation.findOne({
-      user: req.user.id,
+      user: req.user._id,
     });
 
     // Create conversation if it doesn't exist
     if (!conversation) {
       conversation = new Conversation({
-        user: req.user.id,
+        user: req.user._id,
         messages: [],
       });
     }
 
-    // Save user's message
+    // ============================================
+    // Save User Message
+    // ============================================
+
     conversation.messages.push({
       role: "user",
-      content: message.trim(),
+      content: cleanMessage,
     });
 
-    // Save AI response
+    // ============================================
+    // Save AI Response
+    // ============================================
+
     conversation.messages.push({
       role: "assistant",
       content: result.reply,
@@ -50,7 +103,11 @@ export const chatWithAI = async (req, res) => {
 
     await conversation.save();
 
-    res.status(200).json({
+    // ============================================
+    // Response
+    // ============================================
+
+    return res.status(200).json({
       success: true,
       message: "AI response generated successfully.",
       data: {
@@ -60,45 +117,66 @@ export const chatWithAI = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "AI Chat Error:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to process AI chat.",
     });
   }
 };
 
+// ============================================
+// GET CONVERSATION HISTORY
+// ============================================
+
 export const getHistory = async (req, res) => {
   try {
     const history = await Conversation.find({
-      user: req.user.id,
-    }).sort({ updatedAt: -1 });
+      user: req.user._id,
+    }).sort({
+      updatedAt: -1,
+    });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Conversation history retrieved successfully.",
+      message:
+        "Conversation history retrieved successfully.",
       data: history,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Get History Error:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to retrieve conversation history.",
+      message:
+        "Failed to retrieve conversation history.",
     });
   }
 };
 
-// Get one specific conversation
-export const getConversationById = async (req, res) => {
+// ============================================
+// GET ONE CONVERSATION
+// ============================================
+
+export const getConversationById = async (
+  req,
+  res
+) => {
   try {
     const { conversationId } = req.params;
 
-    const conversation = await Conversation.findOne({
-      _id: conversationId,
-      user: req.user.id,
-    });
+    const conversation =
+      await Conversation.findOne({
+        _id: conversationId,
+        user: req.user._id,
+      });
 
     if (!conversation) {
       return res.status(404).json({
@@ -107,13 +185,17 @@ export const getConversationById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Conversation retrieved successfully.",
+      message:
+        "Conversation retrieved successfully.",
       data: conversation,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Get Conversation Error:",
+      error
+    );
 
     // Invalid MongoDB ObjectId
     if (error.name === "CastError") {
@@ -123,32 +205,48 @@ export const getConversationById = async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to retrieve conversation.",
+      message:
+        "Failed to retrieve conversation.",
     });
   }
 };
 
-// Alias for frontend/API compatibility
+// ============================================
+// CHAT HISTORY ALIAS
+// ============================================
+
 export const getChatHistory = getHistory;
 
-export const deleteHistory = async (req, res) => {
+// ============================================
+// DELETE CONVERSATION HISTORY
+// ============================================
+
+export const deleteHistory = async (
+  req,
+  res
+) => {
   try {
     await Conversation.deleteMany({
-      user: req.user.id,
+      user: req.user._id,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Conversation history deleted successfully.",
+      message:
+        "Conversation history deleted successfully.",
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Delete History Error:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to delete conversation history.",
+      message:
+        "Failed to delete conversation history.",
     });
   }
 };

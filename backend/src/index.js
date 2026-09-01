@@ -12,6 +12,8 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import agentRoutes from "./routes/agentRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import resumeRoutes from "./routes/resumeRoutes.js";
+import followRoutes from "./routes/followRoutes.js";
 
 // Fix MongoDB Atlas SRV DNS issue
 dns.setServers([
@@ -50,6 +52,8 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/resume", resumeRoutes);
+app.use("/api/follow", followRoutes);
 
 // =========================
 // Root Route
