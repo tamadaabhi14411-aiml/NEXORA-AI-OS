@@ -9,43 +9,79 @@ import {
   Users,
   Target,
   AlertCircle,
+  Loader2,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
 } from "lucide-react";
+
 import DashboardLayout from "../../layouts/DashboardLayout";
 import profileService from "../../services/profileService";
+import resumeService from "../../services/resumeService";
+
+const companies = [
+  { value: "Google", label: "Google" },
+  { value: "Microsoft", label: "Microsoft" },
+  { value: "Amazon", label: "Amazon" },
+  { value: "Apple", label: "Apple" },
+  { value: "Meta", label: "Meta" },
+];
+
+const roles = [
+  { value: "Software Engineer", label: "Software Engineer" },
+  { value: "Data Scientist", label: "Data Scientist" },
+  { value: "Data Analyst", label: "Data Analyst" },
+  { value: "ML Engineer", label: "ML Engineer" },
+];
 
 function ResumeAI() {
   const [profileData, setProfileData] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [company, setCompany] = useState("Google");
+  const [role, setRole] = useState("Software Engineer");
+
+  const [analysis, setAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+
+  const [resume, setResume] = useState(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [resumeError, setResumeError] = useState("");
+
+  // ---------------------------------------
+  // LOAD USER PROFILE
+  // ---------------------------------------
 
   const loadProfile = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const data = await profileService.getProfile();
+      const response = await profileService.getProfile();
 
-      if (!data?.success || !data?.data) {
+      console.log("Profile response:", response);
+
+      if (!response?.success || !response?.data) {
         throw new Error("Invalid profile response.");
       }
 
-      setProfileData(data.data);
-    } catch (error) {
-      console.error("Resume AI profile error:", error);
+      setProfileData(response.data);
+    } catch (err) {
+      console.error("Resume AI profile error:", err);
 
-      if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         setError("Your session has expired. Please login again.");
-      } else if (error.response?.status === 404) {
-        setError("Profile not found.");
-      } else if (error.response?.status >= 500) {
-        setError("The profile service is currently unavailable.");
-      } else if (error.request) {
-        setError("Unable to connect to the backend.");
+      } else if (err.request) {
+        setError("Unable to connect to the profile backend.");
       } else {
         setError(
-          error.response?.data?.message ||
-            error.message ||
-            "Unable to load profile."
+          err.response?.data?.message ||
+            err.message ||
+            "Unable to load your profile."
         );
       }
     } finally {
@@ -57,368 +93,632 @@ function ResumeAI() {
     loadProfile();
   }, []);
 
+  // ---------------------------------------
+  // ANALYZE PROFILE
+  // ---------------------------------------
+
+  const handleAnalyzeProfile = async () => {
+    if (!company || !role) {
+      setAnalysisError("Please select both a company and a role.");
+      return;
+    }
+
+    try {
+      setAnalysisLoading(true);
+      setAnalysisError("");
+      setAnalysis(null);
+
+      console.log("Sending Resume AI analysis request:", {
+        company,
+        role,
+      });
+
+      const response = await resumeService.analyzeResume(company, role);
+
+      console.log("Resume analysis response:", response);
+
+      if (!response?.success || !response?.data) {
+        throw new Error("Invalid resume analysis response.");
+      }
+
+      setAnalysis(response.data);
+    } catch (err) {
+      console.error("Resume analysis error:", err);
+
+      if (err.response?.status === 400) {
+        setAnalysisError(
+          err.response?.data?.message ||
+            "Career profile data is empty. Please add your skills, projects, education, experience, or career information first."
+        );
+      } else if (err.response?.status === 401) {
+        setAnalysisError(
+          "Your session has expired. Please login again."
+        );
+      } else if (err.request) {
+        setAnalysisError(
+          "Unable to connect to the Resume AI backend."
+        );
+      } else {
+        setAnalysisError(
+          err.response?.data?.message ||
+            err.message ||
+            "Unable to analyze your profile."
+        );
+      }
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  // ---------------------------------------
+  // GENERATE RESUME
+  // ---------------------------------------
+
+  const handleGenerateResume = async () => {
+    if (!company || !role) {
+      setResumeError("Please select both a company and a role.");
+      return;
+    }
+
+    try {
+      setResumeLoading(true);
+      setResumeError("");
+      setResume(null);
+
+      console.log("Sending Resume generation request:", {
+        company,
+        role,
+      });
+
+      const response = await resumeService.generateResume(
+        company,
+        role
+      );
+
+      console.log("Resume generation response:", response);
+
+      if (!response?.success || !response?.data) {
+        throw new Error("Invalid resume generation response.");
+      }
+
+      setResume(response.data);
+    } catch (err) {
+      console.error("Resume generation error:", err);
+
+      if (err.response?.status === 400) {
+        setResumeError(
+          err.response?.data?.message ||
+            "Career profile data is empty. Please add your career information first."
+        );
+      } else if (err.response?.status === 401) {
+        setResumeError(
+          "Your session has expired. Please login again."
+        );
+      } else if (err.request) {
+        setResumeError(
+          "Unable to connect to the Resume AI backend."
+        );
+      } else {
+        setResumeError(
+          err.response?.data?.message ||
+            err.message ||
+            "Unable to generate your resume."
+        );
+      }
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  // ---------------------------------------
+  // PROFILE VALUES
+  // ---------------------------------------
+
+  const user = profileData?.user || profileData || {};
+
+  const skills =
+    user.skills ||
+    user.skill ||
+    user.technicalSkills ||
+    [];
+
+  const projects =
+    user.projects ||
+    user.project ||
+    [];
+
+  const education =
+    user.education ||
+    user.educations ||
+    [];
+
+  const experience =
+    user.experience ||
+    user.experiences ||
+    [];
+
+  const achievements =
+    user.achievements ||
+    user.certifications ||
+    [];
+
+  // ---------------------------------------
+  // LOADING SCREEN
+  // ---------------------------------------
+
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex min-h-[70vh] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-500" />
-            <p className="mt-4 text-sm text-zinc-400">
-              Loading your profile...
-            </p>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="flex items-center gap-3 text-slate-300">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            <span>Loading your career profile...</span>
           </div>
         </div>
       </DashboardLayout>
     );
   }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="mx-auto max-w-5xl">
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 text-red-400" size={22} />
-
-              <div>
-                <h2 className="font-semibold text-white">
-                  Unable to load Resume AI
-                </h2>
-
-                <p className="mt-1 text-sm text-red-300">
-                  {error}
-                </p>
-
-                <button
-                  type="button"
-                  onClick={loadProfile}
-                  className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-                >
-                  Try Again
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const profile = profileData?.profile || {};
-  const skills = Array.isArray(profileData?.skills)
-    ? profileData.skills
-    : [];
-  const projects = Array.isArray(profileData?.projects)
-    ? profileData.projects
-    : [];
-  const achievements = Array.isArray(profileData?.achievements)
-    ? profileData.achievements
-    : [];
-  const education = Array.isArray(profileData?.education)
-    ? profileData.education
-    : [];
-  const experience = Array.isArray(profileData?.experience)
-    ? profileData.experience
-    : [];
-  const community = Array.isArray(profileData?.community)
-    ? profileData.community
-    : [];
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-6xl space-y-6">
-        {/* Header */}
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-blue-600/10 p-3">
-              <Target className="text-blue-500" size={24} />
-            </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                Resume AI
-              </h1>
+        {/* -------------------------------- */}
+        {/* PAGE HEADER */}
+        {/* -------------------------------- */}
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Analyze your profile and prepare for your target role.
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+            <Target className="w-6 h-6 text-blue-500" />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              Resume AI
+            </h1>
+
+            <p className="text-sm text-slate-500">
+              Analyze your profile and prepare for your target role.
+            </p>
+          </div>
+        </div>
+
+        {/* -------------------------------- */}
+        {/* PROFILE LOAD ERROR */}
+        {/* -------------------------------- */}
+
+        {error && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+
+            <p className="text-sm text-red-300">
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* -------------------------------- */}
+        {/* TARGET SECTION */}
+        {/* -------------------------------- */}
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 space-y-5">
+
+          <div>
+            <h2 className="text-base font-bold text-white">
+              Target
+            </h2>
+
+            <p className="text-xs text-slate-500 mt-1">
+              Select your target company and role.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* COMPANY */}
+
+            <select
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
+            >
+              {companies.map((item) => (
+                <option
+                  key={item.value}
+                  value={item.value}
+                >
+                  {item.label}
+                </option>
+              ))}
+            </select>
+
+            {/* ROLE */}
+
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-blue-500"
+            >
+              {roles.map((item) => (
+                <option
+                  key={item.value}
+                  value={item.value}
+                >
+                  {item.label}
+                </option>
+              ))}
+            </select>
+
+          </div>
+
+          {/* BUTTONS */}
+
+          <div className="flex flex-wrap gap-3">
+
+            <button
+              onClick={handleAnalyzeProfile}
+              disabled={analysisLoading}
+              className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-sm font-semibold flex items-center gap-2"
+            >
+              {analysisLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Analyze Profile
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleGenerateResume}
+              disabled={resumeLoading}
+              className="px-5 py-3 rounded-xl border border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 disabled:opacity-60 text-blue-300 text-sm font-semibold flex items-center gap-2"
+            >
+              {resumeLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4" />
+                  Generate Resume
+                </>
+              )}
+            </button>
+
+          </div>
+
+          {/* ANALYSIS ERROR */}
+
+          {analysisError && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+
+              <p className="text-sm text-red-300">
+                {analysisError}
               </p>
             </div>
-          </div>
+          )}
+
+          {/* RESUME ERROR */}
+
+          {resumeError && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+
+              <p className="text-sm text-red-300">
+                {resumeError}
+              </p>
+            </div>
+          )}
+
         </div>
 
-        {/* Target selection */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h2 className="text-lg font-semibold text-white">
-            Target
-          </h2>
+        {/* -------------------------------- */}
+        {/* PROFILE SUMMARY */}
+        {/* -------------------------------- */}
 
-          <p className="mt-1 text-sm text-zinc-500">
-            Select your target company and role.
-          </p>
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 space-y-5">
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <select
-              defaultValue=""
-              className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-300 outline-none focus:border-blue-500"
-            >
-              <option value="" disabled>
-                Select target company
-              </option>
-              <option value="google">Google</option>
-              <option value="microsoft">Microsoft</option>
-              <option value="amazon">Amazon</option>
-              <option value="apple">Apple</option>
-              <option value="meta">Meta</option>
-            </select>
-
-            <select
-              defaultValue=""
-              className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-300 outline-none focus:border-blue-500"
-            >
-              <option value="" disabled>
-                Select target role
-              </option>
-              <option value="software-engineer">
-                Software Engineer
-              </option>
-              <option value="data-scientist">
-                Data Scientist
-              </option>
-              <option value="data-analyst">
-                Data Analyst
-              </option>
-              <option value="ml-engineer">
-                ML Engineer
-              </option>
-            </select>
-          </div>
-        </div>
-
-        {/* Profile */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
           <div className="flex items-center gap-3">
-            <User className="text-blue-500" size={20} />
+            <User className="w-5 h-5 text-blue-500" />
 
             <div>
-              <h2 className="font-semibold text-white">
+              <h2 className="font-bold text-white">
                 Your Profile
               </h2>
 
-              <p className="text-sm text-zinc-500">
+              <p className="text-xs text-slate-500">
                 Information available from your NEXORA profile.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <ProfileItem
-              label="Name"
-              value={profile.name}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <ProfileItem
-              label="Email"
-              value={profile.email}
-            />
+            <div className="rounded-xl border border-slate-800 bg-black/30 p-4">
+              <p className="text-xs text-slate-500">
+                Name
+              </p>
 
-            <ProfileItem
-              label="College"
-              value={profile.college}
-            />
-
-            <ProfileItem
-              label="Branch"
-              value={profile.branch}
-            />
-
-            <ProfileItem
-              label="Year"
-              value={profile.year}
-            />
-          </div>
-        </div>
-
-        {/* Skills */}
-        <DataSection
-          icon={Code2}
-          title="Skills"
-          items={skills}
-          emptyText="No skills available in your profile yet."
-          renderItem={(item, index) => (
-            <span
-              key={item?._id || item?.id || index}
-              className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm text-blue-300"
-            >
-              {typeof item === "string"
-                ? item
-                : item?.name || item?.skill || item?.title || "Skill"}
-            </span>
-          )}
-        />
-
-        {/* Projects */}
-        <DataSection
-          icon={FolderKanban}
-          title="Projects"
-          items={projects}
-          emptyText="No projects available in your profile yet."
-          renderItem={(item, index) => (
-            <div
-              key={item?._id || item?.id || index}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
-            >
-              <h3 className="font-medium text-white">
-                {typeof item === "string"
-                  ? item
-                  : item?.name ||
-                    item?.title ||
-                    "Project"}
-              </h3>
-
-              {(item?.description || item?.details) && (
-                <p className="mt-2 text-sm text-zinc-500">
-                  {item.description || item.details}
-                </p>
-              )}
+              <p className="text-sm font-semibold text-white mt-1">
+                {user.name || "Not available"}
+              </p>
             </div>
-          )}
-        />
 
-        {/* Additional profile evidence */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <DataSection
-            icon={GraduationCap}
-            title="Education"
-            items={education}
-            emptyText="No education details available."
-            renderItem={(item, index) => (
-              <SimpleItem
-                key={item?._id || item?.id || index}
-                item={item}
-              />
-            )}
-          />
+            <div className="rounded-xl border border-slate-800 bg-black/30 p-4">
+              <p className="text-xs text-slate-500">
+                Email
+              </p>
 
-          <DataSection
-            icon={Trophy}
-            title="Achievements"
-            items={achievements}
-            emptyText="No achievements available."
-            renderItem={(item, index) => (
-              <SimpleItem
-                key={item?._id || item?.id || index}
-                item={item}
-              />
-            )}
-          />
+              <p className="text-sm font-semibold text-white mt-1 break-all">
+                {user.email || "Not available"}
+              </p>
+            </div>
 
-          <DataSection
-            icon={Briefcase}
-            title="Experience"
-            items={experience}
-            emptyText="No experience available."
-            renderItem={(item, index) => (
-              <SimpleItem
-                key={item?._id || item?.id || index}
-                item={item}
-              />
-            )}
-          />
+            <div className="rounded-xl border border-slate-800 bg-black/30 p-4">
+              <p className="text-xs text-slate-500">
+                College
+              </p>
 
-          <DataSection
-            icon={Users}
-            title="Community & Leadership"
-            items={community}
-            emptyText="No community or leadership evidence available."
-            renderItem={(item, index) => (
-              <SimpleItem
-                key={item?._id || item?.id || index}
-                item={item}
-              />
-            )}
-          />
-        </div>
+              <p className="text-sm font-semibold text-white mt-1">
+                {user.college ||
+                  user.university ||
+                  "Not available"}
+              </p>
+            </div>
 
-        {/* Match / Gap placeholder */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h2 className="font-semibold text-white">
-            Match & Skill Gaps
-          </h2>
+            <div className="rounded-xl border border-slate-800 bg-black/30 p-4">
+              <p className="text-xs text-slate-500">
+                Branch
+              </p>
 
-          <div className="mt-4 rounded-xl border border-dashed border-zinc-700 bg-zinc-950 p-5">
-            <p className="text-sm font-medium text-zinc-300">
-              Development placeholder
-            </p>
+              <p className="text-sm font-semibold text-white mt-1">
+                {user.branch ||
+                  user.department ||
+                  "Not available"}
+              </p>
+            </div>
 
-            <p className="mt-2 text-sm text-zinc-500">
-              Match scores and skill-gap analysis will be shown here
-              once a backend analysis endpoint is available.
-            </p>
           </div>
         </div>
+
+        {/* -------------------------------- */}
+        {/* SKILLS */}
+        {/* -------------------------------- */}
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+
+          <div className="flex items-center gap-3 mb-4">
+            <Code2 className="w-5 h-5 text-blue-500" />
+
+            <h2 className="font-bold text-white">
+              Skills
+            </h2>
+          </div>
+
+          {skills.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium"
+                >
+                  {typeof skill === "string"
+                    ? skill
+                    : skill.name || skill.title || "Skill"}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No skills available in your profile yet.
+            </p>
+          )}
+
+        </div>
+
+        {/* -------------------------------- */}
+        {/* PROJECTS */}
+        {/* -------------------------------- */}
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+
+          <div className="flex items-center gap-3 mb-4">
+            <FolderKanban className="w-5 h-5 text-blue-500" />
+
+            <h2 className="font-bold text-white">
+              Projects
+            </h2>
+          </div>
+
+          {projects.length > 0 ? (
+            <div className="space-y-3">
+              {projects.map((project, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-slate-800 bg-black/30 p-4"
+                >
+                  <p className="font-semibold text-white">
+                    {project.name ||
+                      project.title ||
+                      "Project"}
+                  </p>
+
+                  {project.description && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {project.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No projects available in your profile yet.
+            </p>
+          )}
+
+        </div>
+
+        {/* -------------------------------- */}
+        {/* EDUCATION */}
+        {/* -------------------------------- */}
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+
+          <div className="flex items-center gap-3 mb-4">
+            <GraduationCap className="w-5 h-5 text-blue-500" />
+
+            <h2 className="font-bold text-white">
+              Education
+            </h2>
+          </div>
+
+          {education.length > 0 ? (
+            <div className="space-y-3">
+              {education.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-slate-800 bg-black/30 p-4"
+                >
+                  <p className="font-semibold text-white">
+                    {item.degree ||
+                      item.course ||
+                      item.title ||
+                      "Education"}
+                  </p>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    {item.college ||
+                      item.university ||
+                      item.institution ||
+                      ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No education information available yet.
+            </p>
+          )}
+
+        </div>
+
+        {/* -------------------------------- */}
+        {/* EXPERIENCE */}
+        {/* -------------------------------- */}
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+
+          <div className="flex items-center gap-3 mb-4">
+            <Briefcase className="w-5 h-5 text-blue-500" />
+
+            <h2 className="font-bold text-white">
+              Experience
+            </h2>
+          </div>
+
+          {experience.length > 0 ? (
+            <div className="space-y-3">
+              {experience.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-slate-800 bg-black/30 p-4"
+                >
+                  <p className="font-semibold text-white">
+                    {item.role ||
+                      item.position ||
+                      item.title ||
+                      "Experience"}
+                  </p>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    {item.company || ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No experience information available yet.
+            </p>
+          )}
+
+        </div>
+
+        {/* -------------------------------- */}
+        {/* ANALYSIS RESULT */}
+        {/* -------------------------------- */}
+
+        {analysis && (
+          <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-6 space-y-5">
+
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+
+              <h2 className="font-bold text-white">
+                Resume Analysis
+              </h2>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-black/30 p-5">
+
+              {typeof analysis === "string" ? (
+                <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                  {analysis}
+                </p>
+              ) : (
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap overflow-auto">
+                  {JSON.stringify(analysis, null, 2)}
+                </pre>
+              )}
+
+            </div>
+
+          </div>
+        )}
+
+        {/* -------------------------------- */}
+        {/* GENERATED RESUME */}
+        {/* -------------------------------- */}
+
+        {resume && (
+          <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-6 space-y-5">
+
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-green-400" />
+
+              <h2 className="font-bold text-white">
+                Generated Resume
+              </h2>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-black/30 p-5">
+
+              {typeof resume === "string" ? (
+                <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                  {resume}
+                </p>
+              ) : (
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap overflow-auto">
+                  {JSON.stringify(resume, null, 2)}
+                </pre>
+              )}
+
+            </div>
+
+          </div>
+        )}
+
       </div>
     </DashboardLayout>
-  );
-}
-
-function ProfileItem({ label, value }) {
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-      <p className="text-xs text-zinc-500">{label}</p>
-
-      <p className="mt-2 truncate text-sm font-medium text-white">
-        {value || "Not available"}
-      </p>
-    </div>
-  );
-}
-
-function DataSection({
-  icon: Icon,
-  title,
-  items,
-  emptyText,
-  renderItem,
-}) {
-  return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-      <div className="flex items-center gap-3">
-        <Icon className="text-blue-500" size={20} />
-
-        <h2 className="font-semibold text-white">
-          {title}
-        </h2>
-      </div>
-
-      {items.length === 0 ? (
-        <p className="mt-5 text-sm text-zinc-500">
-          {emptyText}
-        </p>
-      ) : (
-        <div className="mt-5 flex flex-wrap gap-3">
-          {items.map(renderItem)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SimpleItem({ item }) {
-  const text =
-    typeof item === "string"
-      ? item
-      : item?.name ||
-        item?.title ||
-        item?.description ||
-        item?.details ||
-        "Information available";
-
-  return (
-    <div className="w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-      <p className="text-sm text-zinc-300">
-        {text}
-      </p>
-    </div>
   );
 }
 
