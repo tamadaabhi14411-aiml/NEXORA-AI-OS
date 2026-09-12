@@ -15,6 +15,7 @@ import userRoutes from "./routes/userRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
 
 // Fix MongoDB Atlas SRV DNS issue
 dns.setServers([
@@ -56,6 +57,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/follow", followRoutes);
 app.use("/api/community", communityRoutes);
+app.use("/api/posts", postRoutes);
 
 // =========================
 // Root Route
