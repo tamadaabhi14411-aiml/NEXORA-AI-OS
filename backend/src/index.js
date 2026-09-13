@@ -57,6 +57,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/follow", followRoutes);
 app.use("/api/community", communityRoutes);
+app.use("/api/communities", communityRoutes);
 app.use("/api/posts", postRoutes);
 
 // =========================
