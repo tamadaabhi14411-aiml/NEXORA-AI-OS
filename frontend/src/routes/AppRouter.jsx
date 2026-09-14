@@ -11,20 +11,22 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Chat from "../pages/chat/Chat";
 import ResumeAI from "../pages/career/ResumeAI";
 import UserProfilePage from "../pages/UserProfilePage";
+import CommunityPage from "../pages/CommunityPage";
+import ExploreProjectsPage from "../pages/ExploreProjectsPage";
+import PuterAITest from "../pages/PuterAITest";
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Default */}
         <Route
           path="/"
           element={<Navigate to="/login" replace />}
         />
 
-        {/* Public */}
+        {/* Public Routes */}
         <Route
           path="/login"
           element={<Login />}
@@ -75,12 +77,37 @@ function AppRouter() {
           }
         />
 
-        {/* Unknown URL */}
+        {/* Protected Community */}
+        <Route
+          path="/community"
+          element={
+            <ProtectedRoute>
+              <CommunityPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Projects */}
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <ExploreProjectsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Temporary Puter AI Test */}
+        <Route
+          path="/test-puter"
+          element={<PuterAITest />}
+        />
+
+        {/* Unknown Route */}
         <Route
           path="*"
           element={<Navigate to="/login" replace />}
         />
-
       </Routes>
     </BrowserRouter>
   );
