@@ -13,6 +13,7 @@ import ResumeAI from "../pages/career/ResumeAI";
 import UserProfilePage from "../pages/UserProfilePage";
 import CommunityPage from "../pages/CommunityPage";
 import ExploreProjectsPage from "../pages/ExploreProjectsPage";
+import SkillFeedPage from "../pages/SkillFeedPage";
 import PuterAITest from "../pages/PuterAITest";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -73,6 +74,16 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <UserProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Skill Feed */}
+        <Route
+          path="/skill-feed"
+          element={
+            <ProtectedRoute>
+              <SkillFeedPage />
             </ProtectedRoute>
           }
         />
