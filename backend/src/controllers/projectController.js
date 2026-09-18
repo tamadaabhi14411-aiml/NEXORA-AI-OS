@@ -1,5 +1,6 @@
 import Project from "../models/Project.js";
 import Community from "../models/Community.js";
+import SkillProof from "../models/SkillProof.js";
 
 // CREATE PROJECT
 export const createProject = async (req, res) => {
@@ -411,7 +412,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// COMPLETE PROJECT
+// COMPLETE PROJECT + CREATE SKILL PROOFS
 export const completeProject = async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -433,6 +434,20 @@ export const completeProject = async (req, res) => {
       });
     }
 
+    if (project.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Project is already completed.",
+      });
+    }
+
+    if (project.tasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Project must have at least one task before completion.",
+      });
+    }
+
     const allTasksCompleted = project.tasks.every(
       (task) => task.status === "completed"
     );
@@ -449,6 +464,54 @@ export const completeProject = async (req, res) => {
 
     await project.save();
 
+    // Create skill proofs for users
+    // who completed assigned project tasks
+    const contributionMap = new Map();
+
+    project.tasks.forEach((task) => {
+      if (task.status === "completed" && task.assignedTo) {
+        const memberId = task.assignedTo.toString();
+
+        if (!contributionMap.has(memberId)) {
+          contributionMap.set(memberId, []);
+        }
+
+        contributionMap.get(memberId).push(task.title);
+      }
+    });
+
+    const skillProofs = [];
+
+    for (const [memberId, taskTitles] of contributionMap) {
+      const contribution =
+        `Completed tasks: ${taskTitles.join(", ")}`;
+
+      const proof = await SkillProof.findOneAndUpdate(
+        {
+          user: memberId,
+          project: project._id,
+          skill: project.skill,
+        },
+        {
+          user: memberId,
+          skill: project.skill,
+          project: project._id,
+          community: project.community,
+          projectTitle: project.title,
+          projectDescription: project.description,
+          contribution,
+          status: "completed",
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+
+      skillProofs.push(proof);
+    }
+
     return res.status(200).json({
       success: true,
       message: "Project completed successfully.",
@@ -456,12 +519,7 @@ export const completeProject = async (req, res) => {
         projectId: project._id,
         status: project.status,
         completedAt: project.completedAt,
-        skillProof: {
-          user: project.owner,
-          skill: project.skill,
-          project: project._id,
-          contribution: "Project owner",
-        },
+        skillProofsCreated: skillProofs.length,
       },
     });
   } catch (error) {
