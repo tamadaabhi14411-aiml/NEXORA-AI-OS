@@ -15,6 +15,10 @@ import userRoutes from "./routes/userRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
+import skillRoutes from "./routes/skillRoutes.js";
+import projectRoutes from "./routes/projectRoutes.js";
+import skillProofRoutes from "./routes/skillProofRoutes.js";
 
 // Fix MongoDB Atlas SRV DNS issue
 dns.setServers([
@@ -52,10 +56,20 @@ connectDB();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/agent", agentRoutes);
+
 app.use("/api/user", userRoutes);
+app.use("/api/users", userRoutes);
+
 app.use("/api/resume", resumeRoutes);
 app.use("/api/follow", followRoutes);
+
 app.use("/api/community", communityRoutes);
+app.use("/api/communities", communityRoutes);
+
+app.use("/api/posts", postRoutes);
+app.use("/api/skills", skillRoutes);
+app.use("/api/skills", skillProofRoutes);
+app.use("/api/projects", projectRoutes);
 
 // =========================
 // Root Route

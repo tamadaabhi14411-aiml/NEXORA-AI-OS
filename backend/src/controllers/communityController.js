@@ -1,13 +1,10 @@
 import Community from "../models/Community.js";
 
-// ============================================
 // LIST COMMUNITIES
-// ============================================
-
 export const listCommunities = async (req, res) => {
   try {
     const communities = await Community.find()
-      .populate("leader", "fullName email avatar")
+      .populate("leader", "fullName avatar")
       .populate("members", "fullName avatar")
       .sort({ createdAt: -1 });
 
@@ -26,16 +23,13 @@ export const listCommunities = async (req, res) => {
   }
 };
 
-// ============================================
 // GET COMMUNITY
-// ============================================
-
 export const getCommunity = async (req, res) => {
   try {
     const { communityId } = req.params;
 
     const community = await Community.findById(communityId)
-      .populate("leader", "fullName email avatar")
+      .populate("leader", "fullName avatar")
       .populate("members", "fullName avatar");
 
     if (!community) {
@@ -60,10 +54,7 @@ export const getCommunity = async (req, res) => {
   }
 };
 
-// ============================================
 // JOIN COMMUNITY
-// ============================================
-
 export const joinCommunity = async (req, res) => {
   try {
     const { communityId } = req.params;
@@ -112,10 +103,7 @@ export const joinCommunity = async (req, res) => {
   }
 };
 
-// ============================================
 // LEAVE COMMUNITY
-// ============================================
-
 export const leaveCommunity = async (req, res) => {
   try {
     const { communityId } = req.params;
