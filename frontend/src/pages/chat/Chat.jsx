@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
+
 import DashboardLayout from "../../layouts/DashboardLayout";
 import ChatHeader from "../../components/chat/ChatHeader";
 import ChatWindow from "../../components/chat/ChatWindow";
 import ChatInput from "../../components/chat/ChatInput";
 import ConversationHistory from "../../components/chat/ConversationHistory";
+
 import chatService from "../../services/chatService";
+import aiProvider from "../../services/aiProvider";
+
+const AI_PROVIDER = aiProvider.PROVIDERS.BACKEND;
 
 function Chat() {
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
-  const [selectedConversationId, setSelectedConversationId] = useState(null);
+  const [selectedConversationId, setSelectedConversationId] =
+    useState(null);
 
   const [historyLoading, setHistoryLoading] = useState(true);
   const [conversationLoading, setConversationLoading] = useState(false);
@@ -28,7 +34,10 @@ function Chat() {
 
       const history = Array.isArray(data)
         ? data
-        : data?.history || data?.data || data?.conversations || [];
+        : data?.history ||
+          data?.data ||
+          data?.conversations ||
+          [];
 
       const validConversations = history.filter(
         (conversation) => conversation?._id
@@ -39,11 +48,17 @@ function Chat() {
       console.error("History error:", error);
 
       if (error.response?.status === 401) {
-        setError("Your session has expired. Please login again.");
+        setError(
+          "Your session has expired. Please login again."
+        );
       } else if (error.response?.status >= 500) {
-        setError("The AI backend is currently unavailable.");
+        setError(
+          "The AI backend is currently unavailable."
+        );
       } else if (error.request) {
-        setError("Unable to connect to the AI backend.");
+        setError(
+          "Unable to connect to the AI backend."
+        );
       } else {
         setError(
           error.response?.data?.message ||
@@ -71,11 +86,19 @@ function Chat() {
       setError("");
       setMessages([]);
 
-      console.log("OPENING CONVERSATION ID:", conversationId);
+      console.log(
+        "OPENING CONVERSATION ID:",
+        conversationId
+      );
 
-      const data = await chatService.getConversation(conversationId);
+      const data = await chatService.getConversation(
+        conversationId
+      );
 
-      console.log("CONVERSATION RESPONSE:", data);
+      console.log(
+        "CONVERSATION RESPONSE:",
+        data
+      );
 
       const conversationData = data?.data;
 
@@ -84,29 +107,38 @@ function Chat() {
         return;
       }
 
-      const formattedMessages = (conversationData.messages || []).map(
-        (message, index) => ({
-          id: `${conversationData._id}-${index}`,
-          sender:
-            message.role === "assistant"
-              ? "ai"
-              : "user",
-          text: message.content || "",
-        })
-      );
+      const formattedMessages = (
+        conversationData.messages || []
+      ).map((message, index) => ({
+        id: `${conversationData._id}-${index}`,
+        sender:
+          message.role === "assistant"
+            ? "ai"
+            : "user",
+        text: message.content || "",
+      }));
 
       setMessages(formattedMessages);
     } catch (error) {
-      console.error("Open conversation error:", error);
+      console.error(
+        "Open conversation error:",
+        error
+      );
 
       if (error.response?.status === 401) {
-        setError("Your session has expired. Please login again.");
+        setError(
+          "Your session has expired. Please login again."
+        );
       } else if (error.response?.status === 404) {
         setError("Conversation not found.");
       } else if (error.response?.status >= 500) {
-        setError("The AI backend is currently unavailable.");
+        setError(
+          "The AI backend is currently unavailable."
+        );
       } else if (error.request) {
-        setError("Unable to connect to the AI backend.");
+        setError(
+          "Unable to connect to the AI backend."
+        );
       } else {
         setError(
           error.response?.data?.message ||
@@ -149,21 +181,23 @@ function Chat() {
         userMessage,
       ]);
 
-      const data = await chatService.sendMessage(trimmedMessage);
+      const result = await aiProvider.sendMessage(
+        trimmedMessage,
+        AI_PROVIDER
+      );
 
-      console.log("CHAT RESPONSE:", data);
+      console.log(
+        "AI PROVIDER RESPONSE:",
+        result
+      );
 
       const assistantContent =
-        data?.data?.message ||
-        data?.data?.response ||
-        data?.data?.reply ||
-        data?.data?.answer ||
-        data?.data?.content ||
-        data?.message ||
-        data?.response ||
-        data?.reply ||
-        data?.answer ||
-        data?.content;
+        result?.message ||
+        result?.data?.message ||
+        result?.data?.response ||
+        result?.data?.reply ||
+        result?.data?.answer ||
+        result?.data?.content;
 
       if (!assistantContent) {
         throw new Error(
@@ -185,26 +219,20 @@ function Chat() {
         assistantMessage,
       ]);
 
-      // Refresh history so the latest conversation appears
-      await loadHistory();
-    } catch (error) {
-      console.error("Send message error:", error);
-
-      if (error.response?.status === 401) {
-        setError("Your session has expired. Please login again.");
-      } else if (error.response?.status === 404) {
-        setError("Chat endpoint not found.");
-      } else if (error.response?.status >= 500) {
-        setError("The AI backend is currently unavailable.");
-      } else if (error.request) {
-        setError("Unable to connect to the AI backend.");
-      } else {
-        setError(
-          error.response?.data?.message ||
-            error.message ||
-            "Unable to send message."
-        );
+      // Only refresh backend history when supported.
+      if (result?.historySupported) {
+        await loadHistory();
       }
+    } catch (error) {
+      console.error(
+        "Send message error:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "NEXORA AI is temporarily unable to respond. Please try again."
+      );
     } finally {
       setSending(false);
     }
@@ -249,6 +277,7 @@ function Chat() {
                 <ChatWindow
                   messages={messages}
                   sending={sending}
+                  onStarterPrompt={handleSendMessage}
                 />
 
                 <ChatInput
