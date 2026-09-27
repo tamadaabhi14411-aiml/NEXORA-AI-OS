@@ -16,6 +16,8 @@ import {
   Lightbulb,
   Code2,
   UserRoundCheck,
+  Trophy,
+  Building2,
 } from "lucide-react";
 
 export default function UserProfilePage() {
@@ -71,6 +73,10 @@ export default function UserProfilePage() {
       displayName
     )}&background=0f172a&color=ffffff`;
 
+  const role = user.role || "student";
+  const xp = user.xp ?? 0;
+  const level = user.level ?? 1;
+
   const handleCreatePost = (event) => {
     event.preventDefault();
 
@@ -97,10 +103,26 @@ export default function UserProfilePage() {
     setIsPostOpen(false);
   };
 
+  const EmptyState = ({ message, detail }) => (
+    <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
+      <p className="text-sm text-slate-400">
+        {message}
+      </p>
+
+      {detail && (
+        <p className="text-xs text-slate-600 mt-2">
+          {detail}
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-      {/* Profile Header */}
+      {/* =========================================================
+          PROFILE HEADER
+      ========================================================== */}
       <div className="glass-card rounded-3xl p-6 sm:p-8 border border-slate-800 relative overflow-hidden">
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -121,12 +143,12 @@ export default function UserProfilePage() {
                 </h1>
 
                 <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] font-bold border border-blue-500/30">
-                  Your Profile
+                  Skill Identity
                 </span>
               </div>
 
               <p className="text-sm font-semibold text-blue-400 capitalize">
-                {user.role || "Student"}
+                {role}
               </p>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
@@ -151,18 +173,22 @@ export default function UserProfilePage() {
 
         </div>
 
-        {/* Reputation */}
+        {/* Real Backend Reputation Data */}
         <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-800">
 
           <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800">
             <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-              Reputation / XP
+              XP
             </span>
 
             <span className="text-xl font-black text-blue-400 flex items-center gap-1 mt-1">
               <Zap className="w-5 h-5" />
-              {user.xp ?? 0} XP
+              {xp} XP
             </span>
+
+            <p className="text-[10px] text-slate-600 mt-1">
+              Backend value
+            </p>
           </div>
 
           <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800">
@@ -172,14 +198,20 @@ export default function UserProfilePage() {
 
             <span className="text-xl font-black text-slate-200 flex items-center gap-1 mt-1">
               <Award className="w-5 h-5 text-amber-400" />
-              {user.level ?? 1}
+              {level}
             </span>
+
+            <p className="text-[10px] text-slate-600 mt-1">
+              Backend value
+            </p>
           </div>
 
         </div>
       </div>
 
-      {/* Skill Identity */}
+      {/* =========================================================
+          SKILL IDENTITY
+      ========================================================== */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
 
         <div className="flex items-center gap-3">
@@ -191,7 +223,7 @@ export default function UserProfilePage() {
             </h3>
 
             <p className="text-xs text-slate-500 mt-1">
-              Your current professional and learning identity on NEXORA.
+              A profile-based identity built from available NEXORA data.
             </p>
           </div>
         </div>
@@ -207,7 +239,7 @@ export default function UserProfilePage() {
             </div>
 
             <p className="text-sm font-semibold text-white capitalize">
-              {user.role || "Student"}
+              {role}
             </p>
           </div>
 
@@ -220,7 +252,7 @@ export default function UserProfilePage() {
             </div>
 
             <p className="text-sm font-semibold text-white">
-              {user.xp ?? 0} XP
+              {xp} XP
             </p>
           </div>
 
@@ -233,7 +265,7 @@ export default function UserProfilePage() {
             </div>
 
             <p className="text-sm font-semibold text-white">
-              Level {user.level ?? 1}
+              Level {level}
             </p>
           </div>
 
@@ -241,12 +273,12 @@ export default function UserProfilePage() {
             <div className="flex items-center gap-2 mb-2">
               <UserRoundCheck className="w-4 h-4 text-emerald-400" />
               <span className="text-[10px] uppercase font-bold text-slate-500">
-                Identity
+                Profile
               </span>
             </div>
 
             <p className="text-sm font-semibold text-emerald-300">
-              Active Profile
+              Active
             </p>
           </div>
 
@@ -254,14 +286,17 @@ export default function UserProfilePage() {
 
         <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
           <p className="text-xs text-slate-400 leading-relaxed">
-            Skills and verification are shown only when supported by real
-            backend data. No skill or verification status is invented here.
+            Skills, achievements and verification status are displayed only
+            when real backend data is available. No skill or verification
+            status is invented.
           </p>
         </div>
 
       </div>
 
-      {/* Skill Evidence */}
+      {/* =========================================================
+          SKILL EVIDENCE
+      ========================================================== */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
 
         <div className="flex items-center gap-2">
@@ -273,8 +308,8 @@ export default function UserProfilePage() {
             </h3>
 
             <p className="text-xs text-slate-500 mt-1">
-              Projects, assessments, learning milestones, achievements,
-              teaching activity and community contributions.
+              Evidence can include projects, learning milestones,
+              assessments, achievements, teaching and community activity.
             </p>
           </div>
         </div>
@@ -348,21 +383,17 @@ export default function UserProfilePage() {
 
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
-            <p className="text-sm text-slate-400">
-              No backend skill evidence is currently available.
-            </p>
-
-            <p className="text-xs text-slate-600 mt-2">
-              Create a Skill Post below to preview learning and project
-              evidence in this profile.
-            </p>
-          </div>
+          <EmptyState
+            message="No backend skill evidence is currently available."
+            detail="You can create a session-only Skill Post below to preview evidence."
+          />
         )}
 
       </div>
 
-      {/* Projects */}
+      {/* =========================================================
+          PROJECTS
+      ========================================================== */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
 
         <div className="flex items-center gap-2">
@@ -374,24 +405,47 @@ export default function UserProfilePage() {
             </h3>
 
             <p className="text-xs text-slate-500 mt-1">
-              Projects connected to this user's skill identity.
+              Projects connected to this user's Skill Identity.
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
-          <p className="text-sm text-slate-400">
-            No backend project data is currently available.
-          </p>
-
-          <p className="text-xs text-slate-600 mt-2">
-            Project evidence can still be shared through Skill Posts.
-          </p>
-        </div>
+        <EmptyState
+          message="No backend project data is currently available."
+          detail="Project information will appear here when a project API is connected."
+        />
 
       </div>
 
-      {/* Teaching Activity */}
+      {/* =========================================================
+          ACHIEVEMENTS
+      ========================================================== */}
+      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+
+        <div className="flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-amber-400" />
+
+          <div>
+            <h3 className="text-base font-bold text-white">
+              Achievements
+            </h3>
+
+            <p className="text-xs text-slate-500 mt-1">
+              Completed milestones and achievements connected to this profile.
+            </p>
+          </div>
+        </div>
+
+        <EmptyState
+          message="No backend achievement data is currently available."
+          detail="Achievements will appear here when real achievement data is provided."
+        />
+
+      </div>
+
+      {/* =========================================================
+          TEACHING ACTIVITY
+      ========================================================== */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
 
         <div className="flex items-center gap-2">
@@ -408,72 +462,118 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
-          <p className="text-sm text-slate-400">
-            No backend teaching activity is currently available.
+        <EmptyState
+          message="No backend teaching activity is currently available."
+          detail="Teaching evidence will appear when supported by the backend."
+        />
+
+      </div>
+
+      {/* =========================================================
+          FOLLOWERS / FOLLOWING
+      ========================================================== */}
+      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+
+        <div className="flex items-center gap-3">
+          <Users className="w-5 h-5 text-blue-400" />
+
+          <div>
+            <h3 className="text-base font-bold text-white">
+              Network
+            </h3>
+
+            <p className="text-xs text-slate-500 mt-1">
+              Followers and following are controlled by the backend Follow API.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 text-blue-400" />
+
+              <div>
+                <h3 className="text-sm font-bold text-white">
+                  Followers
+                </h3>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  Follow API not available
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 mt-4">
+              Count unavailable
+            </p>
+
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+
+            <div className="flex items-center gap-3">
+              <UserRoundCheck className="w-5 h-5 text-emerald-400" />
+
+              <div>
+                <h3 className="text-sm font-bold text-white">
+                  Following
+                </h3>
+
+                <p className="text-xs text-slate-500 mt-1">
+                  Follow API not available
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 mt-4">
+              Count unavailable
+            </p>
+
+          </div>
+
+        </div>
+
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <p className="text-xs text-slate-400 leading-relaxed">
+            The current backend does not expose Follow, Followers or Following
+            endpoints. No fake follow state or follower count is created.
           </p>
         </div>
 
       </div>
 
-      {/* Followers / Following */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800">
+      {/* =========================================================
+          COMMUNITIES
+      ========================================================== */}
+      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
 
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-indigo-400" />
 
-          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-            <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-white">
+              Communities
+            </h3>
 
-              <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-blue-400" />
-
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Followers
-                  </h3>
-
-                  <p className="text-xs text-slate-500 mt-1">
-                    Follow data will appear when the backend API is available.
-                  </p>
-                </div>
-              </div>
-
-              <span className="text-xl font-black text-white">
-                0
-              </span>
-
-            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Communities connected to this user's identity.
+            </p>
           </div>
-
-          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-            <div className="flex items-center justify-between">
-
-              <div className="flex items-center gap-3">
-                <UserRoundCheck className="w-5 h-5 text-emerald-400" />
-
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Following
-                  </h3>
-
-                  <p className="text-xs text-slate-500 mt-1">
-                    Follow data will appear when the backend API is available.
-                  </p>
-                </div>
-              </div>
-
-              <span className="text-xl font-black text-white">
-                0
-              </span>
-
-            </div>
-          </div>
-
         </div>
+
+        <EmptyState
+          message="No backend community membership data is currently available."
+          detail="Community information will appear here when supported by the backend."
+        />
 
       </div>
 
-      {/* Skill Post */}
+      {/* =========================================================
+          SKILL POST
+      ========================================================== */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -591,14 +691,14 @@ export default function UserProfilePage() {
             </div>
 
             <p className="text-[10px] text-slate-600">
-              Posts are currently available as frontend session content until
-              a backend post API is provided.
+              This Skill Post is currently session-only because the backend
+              does not provide a Skill Post persistence API.
             </p>
 
           </form>
         )}
 
-        {/* Created Post Card */}
+        {/* Created Post */}
         {skillPost && (
           <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5 space-y-4">
 
@@ -616,7 +716,7 @@ export default function UserProfilePage() {
                 </h4>
 
                 <p className="text-[10px] text-slate-500">
-                  Skill Progress
+                  Session-only Skill Progress
                 </p>
               </div>
 
@@ -677,26 +777,29 @@ export default function UserProfilePage() {
 
       </div>
 
-      {/* Badges */}
+      {/* =========================================================
+          BADGES
+      ========================================================== */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
 
         <div className="flex items-center gap-2">
           <Award className="w-5 h-5 text-amber-400" />
 
-          <h3 className="text-base font-bold text-white">
-            Badges
-          </h3>
+          <div>
+            <h3 className="text-base font-bold text-white">
+              Badges
+            </h3>
+
+            <p className="text-xs text-slate-500 mt-1">
+              Recognition earned through NEXORA activities.
+            </p>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
-          <p className="text-sm text-slate-400">
-            No backend badge data is currently available.
-          </p>
-
-          <p className="text-xs text-slate-600 mt-2">
-            Badges will appear here when real backend badge data is provided.
-          </p>
-        </div>
+        <EmptyState
+          message="No backend badge data is currently available."
+          detail="Badges will appear here when real backend badge data is provided."
+        />
 
       </div>
 
