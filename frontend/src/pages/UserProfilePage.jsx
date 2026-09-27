@@ -15,6 +15,7 @@ import {
   Send,
   Lightbulb,
   Code2,
+  UserRoundCheck,
 } from "lucide-react";
 
 export default function UserProfilePage() {
@@ -139,7 +140,6 @@ export default function UserProfilePage() {
           </div>
 
           <div className="flex items-center gap-3">
-
             <a
               href={`mailto:${user.email}`}
               className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700"
@@ -147,7 +147,6 @@ export default function UserProfilePage() {
             >
               <Mail className="w-4 h-4" />
             </a>
-
           </div>
 
         </div>
@@ -178,13 +177,12 @@ export default function UserProfilePage() {
           </div>
 
         </div>
-
       </div>
 
       {/* Skill Identity */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ShieldCheck className="w-5 h-5 text-blue-400" />
 
           <div>
@@ -193,14 +191,71 @@ export default function UserProfilePage() {
             </h3>
 
             <p className="text-xs text-slate-500 mt-1">
-              Skills and verification will appear here when supported by the backend.
+              Your current professional and learning identity on NEXORA.
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
-          <p className="text-sm text-slate-400">
-            No backend skill data is currently available for this profile.
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <User className="w-4 h-4 text-blue-400" />
+              <span className="text-[10px] uppercase font-bold text-slate-500">
+                Role
+              </span>
+            </div>
+
+            <p className="text-sm font-semibold text-white capitalize">
+              {user.role || "Student"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="w-4 h-4 text-blue-400" />
+              <span className="text-[10px] uppercase font-bold text-slate-500">
+                XP
+              </span>
+            </div>
+
+            <p className="text-sm font-semibold text-white">
+              {user.xp ?? 0} XP
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Award className="w-4 h-4 text-amber-400" />
+              <span className="text-[10px] uppercase font-bold text-slate-500">
+                Level
+              </span>
+            </div>
+
+            <p className="text-sm font-semibold text-white">
+              Level {user.level ?? 1}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <UserRoundCheck className="w-4 h-4 text-emerald-400" />
+              <span className="text-[10px] uppercase font-bold text-slate-500">
+                Identity
+              </span>
+            </div>
+
+            <p className="text-sm font-semibold text-emerald-300">
+              Active Profile
+            </p>
+          </div>
+
+        </div>
+
+        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Skills and verification are shown only when supported by real
+            backend data. No skill or verification status is invented here.
           </p>
         </div>
 
@@ -218,16 +273,92 @@ export default function UserProfilePage() {
             </h3>
 
             <p className="text-xs text-slate-500 mt-1">
-              Projects, assessments, learning milestones, peer feedback and teaching activity.
+              Projects, assessments, learning milestones, achievements,
+              teaching activity and community contributions.
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
-          <p className="text-sm text-slate-400">
-            No skill evidence is currently available from the backend.
-          </p>
-        </div>
+        {skillPost ? (
+          <div className="space-y-3">
+
+            {skillPost.learning && (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="w-4 h-4 text-amber-400" />
+
+                  <span className="text-[10px] uppercase font-bold text-slate-500">
+                    Learning Milestone
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  {skillPost.learning}
+                </p>
+              </div>
+            )}
+
+            {skillPost.built && (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Code2 className="w-4 h-4 text-emerald-400" />
+
+                  <span className="text-[10px] uppercase font-bold text-slate-500">
+                    Project Completed
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  {skillPost.built}
+                </p>
+              </div>
+            )}
+
+            {skillPost.evidence && (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FolderKanban className="w-4 h-4 text-purple-400" />
+
+                  <span className="text-[10px] uppercase font-bold text-slate-500">
+                    Project Evidence
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  {skillPost.evidence}
+                </p>
+              </div>
+            )}
+
+            {skillPost.skill && (
+              <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-blue-400" />
+
+                  <span className="text-[10px] uppercase font-bold text-slate-500">
+                    Skill Used
+                  </span>
+                </div>
+
+                <span className="inline-flex px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-semibold">
+                  {skillPost.skill}
+                </span>
+              </div>
+            )}
+
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
+            <p className="text-sm text-slate-400">
+              No backend skill evidence is currently available.
+            </p>
+
+            <p className="text-xs text-slate-600 mt-2">
+              Create a Skill Post below to preview learning and project
+              evidence in this profile.
+            </p>
+          </div>
+        )}
 
       </div>
 
@@ -251,6 +382,10 @@ export default function UserProfilePage() {
         <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
           <p className="text-sm text-slate-400">
             No backend project data is currently available.
+          </p>
+
+          <p className="text-xs text-slate-600 mt-2">
+            Project evidence can still be shared through Skill Posts.
           </p>
         </div>
 
@@ -281,28 +416,58 @@ export default function UserProfilePage() {
 
       </div>
 
-      {/* Followers */}
+      {/* Followers / Following */}
       <div className="glass-panel p-6 rounded-2xl border border-slate-800">
 
-        <div className="flex items-center justify-between">
+        <div className="grid sm:grid-cols-2 gap-3">
 
-          <div className="flex items-center gap-3">
-            <Users className="w-5 h-5 text-blue-400" />
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+            <div className="flex items-center justify-between">
 
-            <div>
-              <h3 className="text-base font-bold text-white">
-                Followers
-              </h3>
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-blue-400" />
 
-              <p className="text-xs text-slate-500 mt-1">
-                Follower information will appear when the follow API is available.
-              </p>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Followers
+                  </h3>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    Follow data will appear when the backend API is available.
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-xl font-black text-white">
+                0
+              </span>
+
             </div>
           </div>
 
-          <span className="text-xl font-black text-white">
-            0
-          </span>
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+            <div className="flex items-center justify-between">
+
+              <div className="flex items-center gap-3">
+                <UserRoundCheck className="w-5 h-5 text-emerald-400" />
+
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Following
+                  </h3>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    Follow data will appear when the backend API is available.
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-xl font-black text-white">
+                0
+              </span>
+
+            </div>
+          </div>
 
         </div>
 
@@ -426,7 +591,8 @@ export default function UserProfilePage() {
             </div>
 
             <p className="text-[10px] text-slate-600">
-              Posts are currently available as frontend session content until a backend post API is provided.
+              Posts are currently available as frontend session content until
+              a backend post API is provided.
             </p>
 
           </form>
@@ -525,6 +691,10 @@ export default function UserProfilePage() {
         <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 p-5">
           <p className="text-sm text-slate-400">
             No backend badge data is currently available.
+          </p>
+
+          <p className="text-xs text-slate-600 mt-2">
+            Badges will appear here when real backend badge data is provided.
           </p>
         </div>
 

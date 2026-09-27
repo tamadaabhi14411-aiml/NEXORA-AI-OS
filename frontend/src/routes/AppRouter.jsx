@@ -14,13 +14,13 @@ import UserProfilePage from "../pages/UserProfilePage";
 import CommunityPage from "../pages/CommunityPage";
 import ExploreProjectsPage from "../pages/ExploreProjectsPage";
 import SkillFeedPage from "../pages/SkillFeedPage";
-import PuterAITest from "../pages/PuterAITest";
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* Default */}
         <Route
           path="/"
@@ -108,17 +108,12 @@ function AppRouter() {
           }
         />
 
-        {/* Temporary Puter AI Test */}
-        <Route
-          path="/test-puter"
-          element={<PuterAITest />}
-        />
-
         {/* Unknown Route */}
         <Route
           path="*"
           element={<Navigate to="/login" replace />}
         />
+
       </Routes>
     </BrowserRouter>
   );
