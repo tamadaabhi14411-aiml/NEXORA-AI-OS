@@ -9,7 +9,17 @@ import ConversationHistory from "../../components/chat/ConversationHistory";
 import chatService from "../../services/chatService";
 import aiProvider from "../../services/aiProvider";
 
-const AI_PROVIDER = aiProvider.PROVIDERS.BACKEND;
+// --------------------------------------------------
+// DAY 12 PRODUCTION AI PROVIDER
+// --------------------------------------------------
+// NEXORA AI uses:
+// 1. Existing backend AI first
+// 2. Puter AI as fallback if backend fails
+//
+// Provider remains invisible to the user.
+// --------------------------------------------------
+
+const AI_PROVIDER = aiProvider.PROVIDERS.AUTO;
 
 function Chat() {
   const [messages, setMessages] = useState([]);
@@ -31,6 +41,7 @@ function Chat() {
   // --------------------------------------------------
   // LOAD CONVERSATION HISTORY
   // --------------------------------------------------
+
   const loadHistory = async () => {
     try {
       setHistoryLoading(true);
@@ -82,6 +93,7 @@ function Chat() {
   // --------------------------------------------------
   // SELECT EXISTING CONVERSATION
   // --------------------------------------------------
+
   const handleSelectConversation = async (
     conversation
   ) => {
@@ -163,6 +175,7 @@ function Chat() {
   // --------------------------------------------------
   // NEW CONVERSATION
   // --------------------------------------------------
+
   const handleNewConversation = () => {
     setSelectedConversationId(null);
     setMessages([]);
@@ -172,6 +185,7 @@ function Chat() {
   // --------------------------------------------------
   // SEND MESSAGE
   // --------------------------------------------------
+
   const handleSendMessage = async (message) => {
     const trimmedMessage = message.trim();
 
@@ -186,6 +200,7 @@ function Chat() {
       // ----------------------------------------------
       // USER MESSAGE
       // ----------------------------------------------
+
       const userMessage = {
         id: `user-${Date.now()}`,
         sender: "user",
@@ -198,8 +213,14 @@ function Chat() {
       ]);
 
       // ----------------------------------------------
-      // SEND TO AI
+      // SEND TO NEXORA AI PROVIDER
       // ----------------------------------------------
+
+      console.log(
+        "ACTIVE AI PROVIDER:",
+        AI_PROVIDER
+      );
+
       const result = await aiProvider.sendMessage(
         trimmedMessage,
         AI_PROVIDER
@@ -212,25 +233,6 @@ function Chat() {
 
       // ----------------------------------------------
       // GET ACTUAL AI RESPONSE
-      // ----------------------------------------------
-      //
-      // aiProvider returns:
-      //
-      // {
-      //   provider: "backend",
-      //   data: {
-      //     success: true,
-      //     message: "AI response generated successfully.",
-      //     data: {
-      //       reply: "Actual AI answer"
-      //     }
-      //   }
-      // }
-      //
-      // Therefore actual answer is:
-      //
-      // result.data.data.reply
-      //
       // ----------------------------------------------
 
       const assistantContent =
@@ -257,6 +259,7 @@ function Chat() {
       // ----------------------------------------------
       // AI MESSAGE
       // ----------------------------------------------
+
       const assistantMessage = {
         id: `ai-${Date.now()}`,
         sender: "ai",
@@ -277,6 +280,11 @@ function Chat() {
       // ----------------------------------------------
       // REFRESH HISTORY
       // ----------------------------------------------
+      //
+      // Backend AI supports history.
+      // Puter fallback currently does not.
+      // ----------------------------------------------
+
       if (result?.historySupported) {
         await loadHistory();
       }
@@ -298,6 +306,7 @@ function Chat() {
   // --------------------------------------------------
   // INITIAL LOAD
   // --------------------------------------------------
+
   useEffect(() => {
     loadHistory();
   }, []);
@@ -305,6 +314,7 @@ function Chat() {
   // --------------------------------------------------
   // UI
   // --------------------------------------------------
+
   return (
     <DashboardLayout>
       <div className="flex h-[calc(100vh-112px)] flex-col">
