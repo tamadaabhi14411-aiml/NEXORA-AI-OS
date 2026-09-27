@@ -14,15 +14,23 @@ const AI_PROVIDER = aiProvider.PROVIDERS.BACKEND;
 function Chat() {
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
+
   const [selectedConversationId, setSelectedConversationId] =
     useState(null);
 
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [conversationLoading, setConversationLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] =
+    useState(true);
+
+  const [conversationLoading, setConversationLoading] =
+    useState(false);
+
   const [sending, setSending] = useState(false);
+
   const [error, setError] = useState("");
 
-  // Load conversation history
+  // --------------------------------------------------
+  // LOAD CONVERSATION HISTORY
+  // --------------------------------------------------
   const loadHistory = async () => {
     try {
       setHistoryLoading(true);
@@ -71,8 +79,12 @@ function Chat() {
     }
   };
 
-  // Open one conversation
-  const handleSelectConversation = async (conversation) => {
+  // --------------------------------------------------
+  // SELECT EXISTING CONVERSATION
+  // --------------------------------------------------
+  const handleSelectConversation = async (
+    conversation
+  ) => {
     const conversationId = conversation?._id;
 
     if (!conversationId) {
@@ -87,36 +99,33 @@ function Chat() {
       setMessages([]);
 
       console.log(
-        "OPENING CONVERSATION ID:",
-        conversationId
+        "OPENING CONVERSATION:",
+        conversation
       );
 
-      const data = await chatService.getConversation(
-        conversationId
-      );
+      // History API already provides messages.
+      const conversationData = conversation;
 
-      console.log(
-        "CONVERSATION RESPONSE:",
-        data
-      );
-
-      const conversationData = data?.data;
-
-      if (!conversationData) {
-        setError("Conversation data was not found.");
+      if (!conversationData?.messages) {
+        setError(
+          "Conversation messages were not found."
+        );
         return;
       }
 
-      const formattedMessages = (
-        conversationData.messages || []
-      ).map((message, index) => ({
-        id: `${conversationData._id}-${index}`,
-        sender:
-          message.role === "assistant"
-            ? "ai"
-            : "user",
-        text: message.content || "",
-      }));
+      const formattedMessages =
+        conversationData.messages.map(
+          (message, index) => ({
+            id: `${conversationData._id}-${index}`,
+
+            sender:
+              message.role === "assistant"
+                ? "ai"
+                : "user",
+
+            text: message.content || "",
+          })
+        );
 
       setMessages(formattedMessages);
     } catch (error) {
@@ -151,14 +160,18 @@ function Chat() {
     }
   };
 
-  // New conversation
+  // --------------------------------------------------
+  // NEW CONVERSATION
+  // --------------------------------------------------
   const handleNewConversation = () => {
     setSelectedConversationId(null);
     setMessages([]);
     setError("");
   };
 
-  // Send message
+  // --------------------------------------------------
+  // SEND MESSAGE
+  // --------------------------------------------------
   const handleSendMessage = async (message) => {
     const trimmedMessage = message.trim();
 
@@ -170,6 +183,9 @@ function Chat() {
       setSending(true);
       setError("");
 
+      // ----------------------------------------------
+      // USER MESSAGE
+      // ----------------------------------------------
       const userMessage = {
         id: `user-${Date.now()}`,
         sender: "user",
@@ -181,6 +197,9 @@ function Chat() {
         userMessage,
       ]);
 
+      // ----------------------------------------------
+      // SEND TO AI
+      // ----------------------------------------------
       const result = await aiProvider.sendMessage(
         trimmedMessage,
         AI_PROVIDER
@@ -191,13 +210,43 @@ function Chat() {
         result
       );
 
+      // ----------------------------------------------
+      // GET ACTUAL AI RESPONSE
+      // ----------------------------------------------
+      //
+      // aiProvider returns:
+      //
+      // {
+      //   provider: "backend",
+      //   data: {
+      //     success: true,
+      //     message: "AI response generated successfully.",
+      //     data: {
+      //       reply: "Actual AI answer"
+      //     }
+      //   }
+      // }
+      //
+      // Therefore actual answer is:
+      //
+      // result.data.data.reply
+      //
+      // ----------------------------------------------
+
       const assistantContent =
-        result?.message ||
-        result?.data?.message ||
-        result?.data?.response ||
+        result?.data?.data?.reply ||
+        result?.data?.data?.conversation?.reply ||
         result?.data?.reply ||
+        result?.data?.conversation?.reply ||
+        result?.data?.response ||
         result?.data?.answer ||
-        result?.data?.content;
+        result?.data?.content ||
+        result?.message;
+
+      console.log(
+        "ACTUAL AI RESPONSE:",
+        assistantContent
+      );
 
       if (!assistantContent) {
         throw new Error(
@@ -205,13 +254,19 @@ function Chat() {
         );
       }
 
+      // ----------------------------------------------
+      // AI MESSAGE
+      // ----------------------------------------------
       const assistantMessage = {
         id: `ai-${Date.now()}`,
         sender: "ai",
+
         text:
           typeof assistantContent === "string"
             ? assistantContent
-            : JSON.stringify(assistantContent),
+            : JSON.stringify(
+                assistantContent
+              ),
       };
 
       setMessages((previousMessages) => [
@@ -219,7 +274,9 @@ function Chat() {
         assistantMessage,
       ]);
 
-      // Only refresh backend history when supported.
+      // ----------------------------------------------
+      // REFRESH HISTORY
+      // ----------------------------------------------
       if (result?.historySupported) {
         await loadHistory();
       }
@@ -238,16 +295,33 @@ function Chat() {
     }
   };
 
+  // --------------------------------------------------
+  // INITIAL LOAD
+  // --------------------------------------------------
   useEffect(() => {
     loadHistory();
   }, []);
 
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
   return (
     <DashboardLayout>
       <div className="flex h-[calc(100vh-112px)] flex-col">
+
+        {/* ------------------------------------------ */}
+        {/* CHAT HEADER */}
+        {/* ------------------------------------------ */}
+
         <ChatHeader
-          onNewConversation={handleNewConversation}
+          onNewConversation={
+            handleNewConversation
+          }
         />
+
+        {/* ------------------------------------------ */}
+        {/* ERROR MESSAGE */}
+        {/* ------------------------------------------ */}
 
         {error && (
           <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -255,19 +329,33 @@ function Chat() {
           </div>
         )}
 
+        {/* ------------------------------------------ */}
+        {/* MAIN CHAT CONTAINER */}
+        {/* ------------------------------------------ */}
+
         <div className="mt-4 flex min-h-0 flex-1 overflow-hidden rounded-xl border border-zinc-800">
-          {/* Conversation History */}
+
+          {/* ---------------------------------------- */}
+          {/* CONVERSATION HISTORY */}
+          {/* ---------------------------------------- */}
+
           <div className="w-72 shrink-0">
             <ConversationHistory
               conversations={conversations}
               loading={historyLoading}
               selectedId={selectedConversationId}
-              onSelect={handleSelectConversation}
+              onSelect={
+                handleSelectConversation
+              }
             />
           </div>
 
-          {/* Chat */}
+          {/* ---------------------------------------- */}
+          {/* CHAT AREA */}
+          {/* ---------------------------------------- */}
+
           <div className="flex min-w-0 flex-1 flex-col px-4">
+
             {conversationLoading ? (
               <div className="flex flex-1 items-center justify-center text-sm text-zinc-500">
                 Loading conversation...
@@ -277,7 +365,9 @@ function Chat() {
                 <ChatWindow
                   messages={messages}
                   sending={sending}
-                  onStarterPrompt={handleSendMessage}
+                  onStarterPrompt={
+                    handleSendMessage
+                  }
                 />
 
                 <ChatInput
