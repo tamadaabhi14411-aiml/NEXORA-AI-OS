@@ -34,61 +34,7 @@ const POST_TYPES = [
   },
 ];
 
-const createInitialPosts = (user) => [
-  {
-    id: "demo-1",
-    authorId: "nexora-demo-1",
-    authorName: "NEXORA Community",
-    avatar: "",
-    skill: "React",
-    type: "Learned",
-    content:
-      "Exploring reusable components and learning how to keep React interfaces clean and scalable.",
-    project: "",
-    createdAt: "Today",
-    likes: 12,
-    comments: 3,
-    liked: false,
-    following: false,
-  },
-  {
-    id: "demo-2",
-    authorId: "nexora-demo-2",
-    authorName: "NEXORA Builder",
-    avatar: "",
-    skill: "Python",
-    type: "Built",
-    content:
-      "Built a small expense tracker using Python and practiced working with structured data.",
-    project: "Python Expense Tracker",
-    createdAt: "Yesterday",
-    likes: 8,
-    comments: 2,
-    liked: false,
-    following: false,
-  },
-  ...(user
-    ? [
-        {
-          id: "local-user-post",
-          authorId: user._id || user.id || "current-user",
-          authorName: user.fullName || "You",
-          avatar: user.avatar || "",
-          skill: "Your Skill",
-          type: "Learned",
-          content:
-            "Start sharing what you learn, build and achieve with the NEXORA community.",
-          project: "",
-          createdAt: "Just now",
-          likes: 0,
-          comments: 0,
-          liked: false,
-          following: false,
-          isLocalPlaceholder: true,
-        },
-      ]
-    : []),
-];
+const createInitialPosts = () => [];
 
 function formatAvatar(name, avatar) {
   if (avatar) {
@@ -134,7 +80,7 @@ function EmptyFeed() {
 export default function SkillFeedPage() {
   const { user, loading: authLoading } = useAuth();
 
-  const [posts, setPosts] = useState(() => createInitialPosts(user));
+  const [posts, setPosts] = useState(() => createInitialPosts());
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const [postType, setPostType] = useState("Learned");
@@ -232,10 +178,6 @@ export default function SkillFeedPage() {
       "Like is not available yet because the current backend does not provide a like API."
     );
 
-    /*
-     * We intentionally do not permanently change the like count.
-     * Day 11 requires real backend like functionality.
-     */
     console.info("Like requested for post:", postId);
   };
 
@@ -244,9 +186,6 @@ export default function SkillFeedPage() {
       "Follow is not available yet because the current backend does not provide a follow API."
     );
 
-    /*
-     * We intentionally do not create a second/local follow system.
-     */
     console.info("Follow requested for user:", postId);
   };
 
@@ -454,7 +393,8 @@ export default function SkillFeedPage() {
           </div>
 
           <p className="text-[10px] text-slate-600">
-            Post persistence will use the backend once a post API is available.
+            Post persistence will use the backend once a post API is
+            available.
           </p>
         </form>
       )}
@@ -480,12 +420,7 @@ export default function SkillFeedPage() {
 
                   <div className="min-w-0">
                     <Link
-                      to={
-                        post.authorId ===
-                        (user._id || user.id || "current-user")
-                          ? "/profile"
-                          : `/profile/${post.authorId}`
-                      }
+                      to="/profile"
                       className="text-sm font-bold text-white hover:text-purple-300 transition truncate block"
                     >
                       {post.authorName}
