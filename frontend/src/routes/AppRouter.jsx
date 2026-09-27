@@ -80,7 +80,7 @@ function AppRouter() {
 
         {/* Protected Skill Feed */}
         <Route
-          path="/skill-feed"
+          path="/skills/feed"
           element={
             <ProtectedRoute>
               <SkillFeedPage />
