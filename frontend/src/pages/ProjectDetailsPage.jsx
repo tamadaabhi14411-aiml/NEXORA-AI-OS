@@ -1,320 +1,410 @@
-import { useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useApp } from "../context/AppContext";
-import SDGBadge from "../components/ui/SDGBadge";
-import ConnectModal from "../components/projects/ConnectModal";
-import { calculateMatchScore } from "../utils/matchingAlgorithm";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  Globe,
+  ArrowLeft,
+  FolderKanban,
   Users,
-  MapPin,
-  Calendar,
-  Sparkles,
-  Bookmark,
-  Kanban,
-  Target,
   UserPlus,
-  ArrowRight,
   CheckCircle2,
-  Building2
+  Clock3,
+  Circle,
+  Plus,
+  AlertCircle,
+  Loader2,
+  Target,
 } from "lucide-react";
+import projectService from "../services/projectService";
 
 export default function ProjectDetailsPage() {
-  const { id } = useParams();
+  const { projectId } = useParams();
   const navigate = useNavigate();
-  const { projects, currentUser, savedProjects, toggleSaveProject, organizations } = useApp();
 
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [project, setProject] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isJoining, setIsJoining] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
+  const [error, setError] = useState("");
 
-  const project = projects.find((p) => p.id === id) || projects[0];
-  const isSaved = savedProjects.includes(project.id);
-  const match = calculateMatchScore(currentUser, project);
+  const loadProject = async () => {
+    setIsLoading(true);
+    setError("");
 
-  const org = organizations.find((o) => o.id === project.organizationId) || {
-    name: project.organizationName,
-    type: "Sustainability Organization",
-    website: "https://sdgconnect.org"
+    try {
+      const data = await projectService.getProject(projectId);
+      setProject(data);
+    } catch (err) {
+      setError(err?.message || "Unable to load project.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const isMember = project.team.some((m) => m.userId === currentUser.id);
+  useEffect(() => {
+    loadProject();
+  }, [projectId]);
+
+  const handleJoinProject = async () => {
+    setIsJoining(true);
+    setError("");
+
+    try {
+      await projectService.joinProject(projectId);
+      setIsJoined(true);
+    } catch (err) {
+      setError(err?.message || "Unable to join project.");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const tasks = project?.tasks || [];
+  const members = project?.members || [];
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === "Completed"
+  ).length;
+
+  const progress =
+    tasks.length > 0
+      ? Math.round((completedTasks / tasks.length) * 100)
+      : Number(project?.progress || 0);
+
+  const status = project?.status || "Status unavailable";
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
+        <div className="flex items-center gap-3 text-sm text-slate-400">
+          <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+          Loading project...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
-      {/* Top Banner Header */}
-      <div className="glass-card rounded-3xl overflow-hidden border border-slate-800 relative">
-        <div className="h-64 sm:h-80 w-full relative bg-slate-900">
-          <img
-            src={project.banner}
-            alt={project.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-        </div>
+    <div className="min-h-screen bg-slate-950 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
-        <div className="p-6 sm:p-8 -mt-20 relative z-10 space-y-4">
-          
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            
-            <div className="flex flex-wrap items-center gap-2">
-              {project.sdgs.map((sdgId) => (
-                <SDGBadge key={sdgId} sdgId={sdgId} size="md" showLabel={true} />
-              ))}
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                {project.status}
-              </span>
+        {/* Back */}
+        <button
+          type="button"
+          onClick={() => navigate("/projects")}
+          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Projects
+        </button>
+
+        {/* Error / unavailable */}
+        {error && !project && (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 sm:p-12 text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+              <AlertCircle className="w-7 h-7 text-red-400" />
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="px-3.5 py-1.5 rounded-full bg-slate-950/90 border border-emerald-500/50 backdrop-blur-md flex items-center gap-1.5 shadow-lg">
-                <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
-                <span className="text-xs font-black text-emerald-400">{match.percentage}% Match for You</span>
-              </div>
+            <h1 className="text-xl font-bold text-white mt-5">
+              Unable to load project.
+            </h1>
 
-              <button
-                onClick={() => toggleSaveProject(project.id)}
-                className={`p-2.5 rounded-xl border backdrop-blur-md transition-colors ${
-                  isSaved
-                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                    : "bg-slate-900/80 border-slate-700 text-slate-300 hover:text-white"
-                }`}
-              >
-                <Bookmark className={`w-4 h-4 ${isSaved ? "fill-emerald-400" : ""}`} />
-              </button>
-            </div>
-
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl font-black text-white">{project.title}</h1>
-          <p className="text-sm sm:text-base text-slate-300 max-w-3xl leading-relaxed">
-            {project.tagline}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-slate-400 border-t border-slate-800/80">
-            <div className="flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-emerald-400" />
-              <span className="text-slate-200 font-semibold">{project.organizationName}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-slate-400" />
-              <span>{project.location}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              <span>Created {project.createdAt}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-slate-400" />
-              <span>{project.team.length} Active Collaborators</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Main Grid: Details Left, Actions/Team Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column (2 cols) */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Overview */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Globe className="w-5 h-5 text-emerald-400" />
-              <span>Project Overview</span>
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
-              {project.description}
+            <p className="text-sm text-slate-400 max-w-xl mx-auto mt-3">
+              {error}
             </p>
-          </div>
 
-          {/* Impact Goal */}
-          <div className="glass-card p-6 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-slate-900 to-slate-900 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              <Target className="w-4 h-4" />
-              <span>Measurable Impact Target</span>
-            </div>
-            <p className="text-sm font-bold text-white leading-relaxed">
-              {project.impactGoal}
-            </p>
-            {project.metrics && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t border-emerald-500/20 text-xs">
-                {Object.entries(project.metrics).map(([key, val]) => (
-                  <div key={key} className="bg-slate-950/60 p-2.5 rounded-xl border border-emerald-500/20">
-                    <span className="text-[10px] text-slate-400 uppercase block">{key.replace(/([A-Z])/g, ' $1')}</span>
-                    <span className="text-sm font-bold text-emerald-400">{val}</span>
+            <button
+              type="button"
+              onClick={() => navigate("/projects")}
+              className="mt-6 px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800 text-sm font-semibold text-slate-200 transition-colors"
+            >
+              Back to Projects
+            </button>
+          </div>
+        )}
+
+        {project && (
+          <>
+            {/* Project Header */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-purple-400">
+                    <FolderKanban className="w-4 h-4" />
+                    Collaborative Project
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Required Skills & Tech Stack */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white">Required Skills & Tech Stack</h3>
-            <div className="flex flex-wrap gap-2">
-              {project.requiredSkills.map((skill) => {
-                const isMatch = currentUser.skills.some(
-                  (s) => s.toLowerCase() === skill.toLowerCase()
-                );
-                return (
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-black text-white">
+                      {project.title || project.name || "Project"}
+                    </h1>
+
+                    <p className="text-sm text-slate-400 mt-3 max-w-3xl leading-relaxed">
+                      {project.description || "Description unavailable."}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs font-semibold text-purple-300">
+                      Skill: {project.skill || "Unavailable"}
+                    </span>
+
+                    <span className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-300">
+                      Community: {project.community || project.communityName || "Unavailable"}
+                    </span>
+
+                    <span className="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300">
+                      Status: {status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="shrink-0">
+                  {isJoined ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full lg:w-auto px-5 py-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-300 text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Joined
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleJoinProject}
+                      disabled={isJoining}
+                      className="w-full lg:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all"
+                    >
+                      {isJoining ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Joining project...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4" />
+                          Join Project
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Owner + Progress */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <section className="lg:col-span-1 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Target className="w-4 h-4 text-purple-400" />
+                  Project Owner
+                </div>
+
+                <div className="mt-5">
+                  <p className="text-base font-semibold text-white">
+                    {project.owner?.name ||
+                      project.ownerName ||
+                      "Owner information unavailable"}
+                  </p>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    {project.owner?.role || "Project Owner"}
+                  </p>
+                </div>
+              </section>
+
+              <section className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-sm font-bold text-white">
+                      Project Progress
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {completedTasks} / {tasks.length} completed tasks
+                    </p>
+                  </div>
+
+                  <span className="text-2xl font-black text-purple-400">
+                    {progress}%
+                  </span>
+                </div>
+
+                <div className="mt-5 h-3 rounded-full bg-slate-800 overflow-hidden">
                   <div
-                    key={skill}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-1.5 ${
-                      isMatch
-                        ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/50"
-                        : "bg-slate-900 text-slate-300 border-slate-800"
-                    }`}
-                  >
-                    {isMatch && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                    <span>{skill}</span>
-                    {isMatch && <span className="text-[10px] text-emerald-400 font-normal">(Your Skill)</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Open Roles */}
-          {project.openRoles && project.openRoles.length > 0 && (
-            <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-              <h3 className="text-base font-bold text-white">Open Roles Needed</h3>
-              <div className="space-y-3">
-                {project.openRoles.map((r, idx) => (
-                  <div key={idx} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-emerald-400">{r.role}</h4>
-                      <div className="flex gap-1">
-                        {r.skillsNeeded.map((s) => (
-                          <span key={s} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-400">{r.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* Right Column: Actions & Team Roster */}
-        <div className="space-y-6">
-          
-          {/* Action Card */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-20">
-            
-            <h3 className="text-base font-bold text-white">Project Actions</h3>
-
-            {isMember ? (
-              <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>You are a team member on this project!</span>
+                    className="h-full rounded-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
                 </div>
-                <Link
-                  to={`/workspace/${project.id}`}
-                  className="w-full py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white flex items-center justify-center gap-2 shadow-md"
-                >
-                  <Kanban className="w-4 h-4" />
-                  <span>Open Project Workspace</span>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <button
-                  onClick={() => setIsConnectModalOpen(true)}
-                  className="w-full py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-all"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Apply / Request to Join Team</span>
-                </button>
+              </section>
+            </div>
 
-                <Link
-                  to={`/workspace/${project.id}`}
-                  className="w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center gap-2"
-                >
-                  <Kanban className="w-4 h-4 text-teal-400" />
-                  <span>View Public Workspace</span>
-                </Link>
+            {/* Members */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-purple-400" />
+                    Project Members
+                  </h2>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    People collaborating on this project.
+                  </p>
+                </div>
+
+                <span className="text-xs text-slate-500">
+                  {members.length} members
+                </span>
               </div>
+
+              {members.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                  {members.map((member) => (
+                    <div
+                      key={member.id || member.userId}
+                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600/30 to-blue-600/30 border border-slate-700 flex items-center justify-center text-sm font-bold text-white">
+                          {(member.name || "?").charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">
+                            {member.name || "Member"}
+                          </p>
+
+                          <p className="text-xs text-purple-400 mt-1">
+                            {member.role || "Member"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500 mt-3">
+                        {Array.isArray(member.skills)
+                          ? member.skills.join(" • ")
+                          : member.skills || "Skills unavailable"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/50 p-6 text-center">
+                  <Users className="w-6 h-6 text-slate-600 mx-auto" />
+                  <p className="text-sm text-slate-400 mt-3">
+                    Member data unavailable.
+                  </p>
+                </div>
+              )}
+            </section>
+
+            {/* Tasks */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    Project Tasks
+                  </h2>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    Track work from Todo to In Progress to Completed.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  disabled
+                  title="Project Task API is not available"
+                  className="px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-slate-600 text-xs font-semibold inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Task
+                </button>
+              </div>
+
+              {tasks.length > 0 ? (
+                <div className="space-y-3 mt-6">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id || task._id}
+                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          {task.title || "Task"}
+                        </p>
+
+                        <p className="text-xs text-slate-500 mt-1">
+                          {task.description || "Description unavailable."}
+                        </p>
+                      </div>
+
+                      <span className="text-xs font-semibold text-slate-300">
+                        {task.status || "Todo"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/50 p-6 text-center">
+                  <Clock3 className="w-6 h-6 text-slate-600 mx-auto" />
+                  <p className="text-sm text-slate-400 mt-3">
+                    Task data unavailable.
+                  </p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Task creation and updates require Project Task APIs.
+                  </p>
+                </div>
+              )}
+            </section>
+
+            {/* Completion */}
+            {status.toLowerCase() === "completed" && (
+              <section className="rounded-2xl border border-green-500/20 bg-green-500/5 p-6 sm:p-8">
+                <div className="flex items-start gap-4">
+                  <CheckCircle2 className="w-7 h-7 text-green-400 shrink-0" />
+
+                  <div>
+                    <h2 className="text-xl font-black text-white">
+                      Project Completed
+                    </h2>
+
+                    <p className="text-sm text-slate-400 mt-2">
+                      Skill: {project.skill || "Unavailable"}
+                    </p>
+
+                    <p className="text-sm text-slate-400">
+                      Community: {project.community || project.communityName || "Unavailable"}
+                    </p>
+
+                    <p className="text-sm text-slate-400">
+                      Members: {members.length}
+                    </p>
+
+                    <p className="text-xs text-slate-600 mt-3">
+                      This project completion can become future verified skill
+                      proof. No badge or verification system is implemented in
+                      Day 17.
+                    </p>
+                  </div>
+                </div>
+              </section>
             )}
 
-            {/* Direct Jump to Collaborator Matcher */}
-            <div className="pt-4 border-t border-slate-800/80">
-              <span className="text-[11px] font-semibold text-slate-400 block mb-2">
-                Looking for more teammates?
-              </span>
-              <Link
-                to={`/collaborators?projectId=${project.id}`}
-                className="w-full py-2.5 rounded-xl text-xs font-semibold bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 flex items-center justify-center gap-2 transition-colors"
-              >
-                <Sparkles className="w-4 h-4 text-emerald-400" />
-                <span>Find Collaborators for this Project</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            {/* Backend error when project object exists */}
+            {error && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
 
-            {/* Organization info */}
-            <div className="pt-4 border-t border-slate-800/80 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Host Organization</span>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-white text-xs">
-                  {project.organizationName.substring(0, 2)}
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">{project.organizationName}</h4>
-                  <a href={org.website} target="_blank" rel="noreferrer" className="text-[11px] text-emerald-400 hover:underline">
-                    {org.website.replace('https://', '')}
-                  </a>
-                </div>
+                <p className="text-xs text-red-300">
+                  {error}
+                </p>
               </div>
-            </div>
-
-            {/* Team Members List */}
-            <div className="pt-4 border-t border-slate-800/80 space-y-3">
-              <h4 className="text-xs font-bold text-white flex items-center justify-between">
-                <span>Current Team Roster</span>
-                <span className="text-[11px] text-slate-400 font-normal">{project.team.length} members</span>
-              </h4>
-              <div className="space-y-2 max-h-56 overflow-y-auto">
-                {project.team.map((m) => (
-                  <div key={m.userId} className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <img src={m.avatar} alt={m.name} className="w-7 h-7 rounded-lg object-cover" />
-                      <div>
-                        <span className="text-xs font-semibold text-white block leading-tight">{m.name}</span>
-                        <span className="text-[10px] text-slate-400 block leading-tight">{m.role}</span>
-                      </div>
-                    </div>
-                    <Link to={`/user/${m.userId}`} className="text-[10px] text-emerald-400 hover:underline">
-                      View
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
+            )}
+          </>
+        )}
       </div>
-
-      {/* Connect Modal */}
-      {isConnectModalOpen && (
-        <ConnectModal
-          user={project.team[0] ? { id: project.team[0].userId, name: project.team[0].name, role: project.team[0].role, avatar: project.team[0].avatar } : currentUser}
-          project={project}
-          matchPercentage={match.percentage}
-          onClose={() => setIsConnectModalOpen(false)}
-        />
-      )}
-
     </div>
   );
 }

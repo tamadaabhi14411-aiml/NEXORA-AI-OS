@@ -11,10 +11,16 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import Chat from "../pages/chat/Chat";
 import ResumeAI from "../pages/career/ResumeAI";
 import UserProfilePage from "../pages/UserProfilePage";
+
 import CommunityPage from "../pages/CommunityPage";
 import CommunityDetailsPage from "../pages/CommunityDetailsPage";
-import ExploreProjectsPage from "../pages/ExploreProjectsPage";
+
 import SkillFeedPage from "../pages/SkillFeedPage";
+
+import ExploreProjectsPage from "../pages/ExploreProjectsPage";
+import CreateProjectPage from "../pages/CreateProjectPage";
+import ProjectDetailsPage from "../pages/ProjectDetailsPage";
+
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
@@ -22,13 +28,9 @@ function AppRouter() {
     <BrowserRouter>
       <Routes>
 
-        {/* Default */}
-        <Route
-          path="/"
-          element={<Navigate to="/login" replace />}
-        />
-
         {/* Public Routes */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
         <Route
           path="/login"
           element={<Login />}
@@ -39,7 +41,7 @@ function AppRouter() {
           element={<Signup />}
         />
 
-        {/* Protected Dashboard */}
+        {/* Protected Core Routes */}
         <Route
           path="/dashboard"
           element={
@@ -49,7 +51,6 @@ function AppRouter() {
           }
         />
 
-        {/* Protected Chat */}
         <Route
           path="/chat"
           element={
@@ -59,7 +60,6 @@ function AppRouter() {
           }
         />
 
-        {/* Protected Resume AI */}
         <Route
           path="/career/resume-ai"
           element={
@@ -69,7 +69,6 @@ function AppRouter() {
           }
         />
 
-        {/* Protected User Profile */}
         <Route
           path="/profile"
           element={
@@ -79,7 +78,7 @@ function AppRouter() {
           }
         />
 
-        {/* Protected Skill Feed */}
+        {/* Skill Feed */}
         <Route
           path="/skills/feed"
           element={
@@ -89,7 +88,7 @@ function AppRouter() {
           }
         />
 
-        {/* Protected Community */}
+        {/* Communities */}
         <Route
           path="/community"
           element={
@@ -99,7 +98,6 @@ function AppRouter() {
           }
         />
 
-        {/* Protected Community Details */}
         <Route
           path="/community/:communityId"
           element={
@@ -109,7 +107,7 @@ function AppRouter() {
           }
         />
 
-        {/* Protected Projects */}
+        {/* Collaborative Projects */}
         <Route
           path="/projects"
           element={
@@ -119,7 +117,25 @@ function AppRouter() {
           }
         />
 
-        {/* Unknown Route */}
+        <Route
+          path="/projects/create"
+          element={
+            <ProtectedRoute>
+              <CreateProjectPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/projects/:projectId"
+          element={
+            <ProtectedRoute>
+              <ProjectDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fallback */}
         <Route
           path="*"
           element={<Navigate to="/login" replace />}

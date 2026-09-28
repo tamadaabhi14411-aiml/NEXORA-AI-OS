@@ -9,6 +9,8 @@ import {
   Crown,
   AlertCircle,
   Plus,
+  FolderKanban,
+  ArrowRight,
 } from "lucide-react";
 
 import { useApp } from "../context/AppContext";
@@ -54,6 +56,10 @@ export default function CommunityDetailsPage() {
     {
       name: "About",
       icon: Info,
+    },
+    {
+      name: "Projects",
+      icon: FolderKanban,
     },
     {
       name: "Posts",
@@ -185,9 +191,9 @@ export default function CommunityDetailsPage() {
       {/* Backend Notice */}
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
         <p className="text-xs text-amber-300 leading-relaxed">
-          Community backend APIs are not available yet. Membership, posts,
-          members and community creation are therefore shown as unavailable
-          instead of using fake data.
+          Community and project backend APIs are not available yet.
+          Community membership, posts, members, and project data are therefore
+          shown as unavailable instead of using fake data.
         </p>
       </div>
 
@@ -224,6 +230,72 @@ export default function CommunityDetailsPage() {
         </section>
       )}
 
+      {/* Projects */}
+      {activeTab === "Projects" && (
+        <section className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <FolderKanban className="w-5 h-5 text-purple-400" />
+
+                <h2 className="text-xl font-bold text-white">
+                  Community Projects
+                </h2>
+              </div>
+
+              <p className="text-sm text-slate-500 mt-1">
+                Collaborative projects built by this community.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  `/projects/create?communityId=${encodeURIComponent(
+                    community.id
+                  )}`
+                )
+              }
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Create Project
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-8 sm:p-10 text-center">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-purple-600/15 to-blue-600/15 border border-purple-500/20 flex items-center justify-center">
+              <FolderKanban className="w-6 h-6 text-purple-400" />
+            </div>
+
+            <h3 className="text-lg font-bold text-white mt-5">
+              Project data unavailable
+            </h3>
+
+            <p className="text-sm text-slate-500 max-w-lg mx-auto mt-2 leading-relaxed">
+              The current backend does not provide Project APIs yet, so
+              community projects cannot be loaded without using fake data.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  `/projects/create?communityId=${encodeURIComponent(
+                    community.id
+                  )}`
+                )
+              }
+              className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white text-sm font-semibold transition-colors"
+            >
+              Create Project
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Posts */}
       {activeTab === "Posts" && (
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
@@ -238,7 +310,7 @@ export default function CommunityDetailsPage() {
               </div>
 
               <p className="text-sm text-slate-500 mt-1">
-                Be the first person to share something.
+                Share knowledge and updates with the community.
               </p>
             </div>
 
@@ -246,21 +318,21 @@ export default function CommunityDetailsPage() {
               type="button"
               disabled
               title="Community Post API is not available"
-              className="px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-600 text-xs font-semibold flex items-center justify-center gap-2 cursor-not-allowed"
+              className="px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-600 text-sm font-semibold flex items-center gap-2 cursor-not-allowed"
             >
               <Plus className="w-4 h-4" />
-              Create Post
+              Create Post unavailable
             </button>
           </div>
 
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/40 p-6 text-center">
-            <MessageSquare className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-6 text-center">
+            <MessageSquare className="w-8 h-8 text-slate-700 mx-auto" />
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm font-semibold text-slate-400 mt-3">
               No posts yet.
             </p>
 
-            <p className="text-xs text-slate-700 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Community post data is unavailable from the backend.
             </p>
           </div>
@@ -270,7 +342,7 @@ export default function CommunityDetailsPage() {
       {/* Members */}
       {activeTab === "Members" && (
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-purple-400" />
 
             <h2 className="text-xl font-bold text-white">
@@ -278,15 +350,15 @@ export default function CommunityDetailsPage() {
             </h2>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-8 text-center">
-            <Users className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-6 text-center">
+            <Users className="w-8 h-8 text-slate-700 mx-auto" />
 
-            <p className="text-sm text-slate-500">
-              No members yet.
+            <p className="text-sm font-semibold text-slate-400 mt-3">
+              Members unavailable
             </p>
 
-            <p className="text-xs text-slate-700 mt-1">
-              Member data is unavailable from the backend.
+            <p className="text-xs text-slate-600 mt-1">
+              Member data is not available from the current backend.
             </p>
           </div>
         </section>
