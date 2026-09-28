@@ -12,6 +12,7 @@ import Chat from "../pages/chat/Chat";
 import ResumeAI from "../pages/career/ResumeAI";
 import UserProfilePage from "../pages/UserProfilePage";
 import CommunityPage from "../pages/CommunityPage";
+import CommunityDetailsPage from "../pages/CommunityDetailsPage";
 import ExploreProjectsPage from "../pages/ExploreProjectsPage";
 import SkillFeedPage from "../pages/SkillFeedPage";
 import ProtectedRoute from "./ProtectedRoute";
@@ -94,6 +95,16 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <CommunityPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Community Details */}
+        <Route
+          path="/community/:communityId"
+          element={
+            <ProtectedRoute>
+              <CommunityDetailsPage />
             </ProtectedRoute>
           }
         />
