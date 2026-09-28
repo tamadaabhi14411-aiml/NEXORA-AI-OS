@@ -13,6 +13,8 @@ import {
   Clock3,
   User,
   AlertCircle,
+  Flame,
+  Users,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -34,61 +36,25 @@ const POST_TYPES = [
   },
 ];
 
-const createInitialPosts = (user) => [
+const FEED_TABS = [
   {
-    id: "demo-1",
-    authorId: "nexora-demo-1",
-    authorName: "NEXORA Community",
-    avatar: "",
-    skill: "React",
-    type: "Learned",
-    content:
-      "Exploring reusable components and learning how to keep React interfaces clean and scalable.",
-    project: "",
-    createdAt: "Today",
-    likes: 12,
-    comments: 3,
-    liked: false,
-    following: false,
+    value: "for-you",
+    label: "For You",
+    icon: Sparkles,
   },
   {
-    id: "demo-2",
-    authorId: "nexora-demo-2",
-    authorName: "NEXORA Builder",
-    avatar: "",
-    skill: "Python",
-    type: "Built",
-    content:
-      "Built a small expense tracker using Python and practiced working with structured data.",
-    project: "Python Expense Tracker",
-    createdAt: "Yesterday",
-    likes: 8,
-    comments: 2,
-    liked: false,
-    following: false,
+    value: "following",
+    label: "Following",
+    icon: Users,
   },
-  ...(user
-    ? [
-        {
-          id: "local-user-post",
-          authorId: user._id || user.id || "current-user",
-          authorName: user.fullName || "You",
-          avatar: user.avatar || "",
-          skill: "Your Skill",
-          type: "Learned",
-          content:
-            "Start sharing what you learn, build and achieve with the NEXORA community.",
-          project: "",
-          createdAt: "Just now",
-          likes: 0,
-          comments: 0,
-          liked: false,
-          following: false,
-          isLocalPlaceholder: true,
-        },
-      ]
-    : []),
+  {
+    value: "trending",
+    label: "Trending",
+    icon: Flame,
+  },
 ];
+
+const createInitialPosts = () => [];
 
 function formatAvatar(name, avatar) {
   if (avatar) {
@@ -115,18 +81,44 @@ function PostTypeBadge({ type }) {
   );
 }
 
-function EmptyFeed() {
+function EmptyFeed({ activeTab }) {
+  const messages = {
+    "for-you": {
+      title: "Your skill feed is empty",
+      description:
+        "Be the first to share something you learned, built or achieved.",
+    },
+    following: {
+      title: "No posts from followed users",
+      description:
+        "Follow other learners to see their skill activity here.",
+    },
+    trending: {
+      title: "No trending posts yet",
+      description:
+        "Trending skill activity will appear here when backend feed data is available.",
+    },
+  };
+
+  const message = messages[activeTab] || messages["for-you"];
+
   return (
     <div className="glass-card rounded-3xl border border-slate-800 p-10 text-center">
       <Sparkles className="w-10 h-10 mx-auto text-purple-400 mb-4" />
 
       <h2 className="text-lg font-bold text-white">
-        Your skill feed is empty
+        {message.title}
       </h2>
 
       <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-        Be the first to share something you learned, built or achieved.
+        {message.description}
       </p>
+
+      {activeTab === "for-you" && (
+        <p className="text-[10px] text-slate-600 mt-4">
+          No backend skill-post API is currently available.
+        </p>
+      )}
     </div>
   );
 }
@@ -134,7 +126,8 @@ function EmptyFeed() {
 export default function SkillFeedPage() {
   const { user, loading: authLoading } = useAuth();
 
-  const [posts, setPosts] = useState(() => createInitialPosts(user));
+  const [posts, setPosts] = useState(() => createInitialPosts());
+  const [activeTab, setActiveTab] = useState("for-you");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const [postType, setPostType] = useState("Learned");
@@ -150,20 +143,32 @@ export default function SkillFeedPage() {
   const filteredPosts = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (!query) {
-      return posts;
+    let result = posts;
+
+    if (activeTab === "following") {
+      result = result.filter((post) => post.following === true);
     }
 
-    return posts.filter((post) => {
+    if (activeTab === "trending") {
+      result = [...result].sort(
+        (a, b) => (b.likes || 0) - (a.likes || 0)
+      );
+    }
+
+    if (!query) {
+      return result;
+    }
+
+    return result.filter((post) => {
       return (
-        post.authorName.toLowerCase().includes(query) ||
-        post.skill.toLowerCase().includes(query) ||
-        post.type.toLowerCase().includes(query) ||
-        post.content.toLowerCase().includes(query) ||
-        post.project.toLowerCase().includes(query)
+        post.authorName?.toLowerCase().includes(query) ||
+        post.skill?.toLowerCase().includes(query) ||
+        post.type?.toLowerCase().includes(query) ||
+        post.content?.toLowerCase().includes(query) ||
+        post.project?.toLowerCase().includes(query)
       );
     });
-  }, [posts, search]);
+  }, [posts, activeTab, search]);
 
   const handleCreatePost = async (event) => {
     event.preventDefault();
@@ -189,17 +194,18 @@ export default function SkillFeedPage() {
 
     try {
       /*
-       * Day 11 backend limitation:
-       * No post creation API currently exists.
+       * Day 15 backend limitation:
+       * The current backend does not provide a skill-post
+       * creation API.
        *
-       * Therefore this is intentionally session-only frontend content.
-       * It is not presented as backend-persisted data.
+       * Therefore this remains session-only frontend content.
+       * It is NOT presented as backend-persisted data.
        */
 
       const newPost = {
         id: `local-${Date.now()}`,
         authorId: user._id || user.id || "current-user",
-        authorName: user.fullName || "You",
+        authorName: user.fullName || user.name || "You",
         avatar: user.avatar || "",
         skill: skill.trim(),
         type: postType,
@@ -220,6 +226,7 @@ export default function SkillFeedPage() {
       setProject("");
       setPostType("Learned");
       setIsCreateOpen(false);
+      setActiveTab("for-you");
     } catch {
       setError("Unable to create the post.");
     } finally {
@@ -229,25 +236,24 @@ export default function SkillFeedPage() {
 
   const handleLike = (postId) => {
     setError(
-      "Like is not available yet because the current backend does not provide a like API."
+      "Like is unavailable because the current backend does not provide a like API."
     );
 
-    /*
-     * We intentionally do not permanently change the like count.
-     * Day 11 requires real backend like functionality.
-     */
     console.info("Like requested for post:", postId);
   };
 
   const handleFollow = (postId) => {
     setError(
-      "Follow is not available yet because the current backend does not provide a follow API."
+      "Follow is unavailable because the current backend does not provide a follow API."
     );
 
-    /*
-     * We intentionally do not create a second/local follow system.
-     */
     console.info("Follow requested for user:", postId);
+  };
+
+  const handleComments = () => {
+    setError(
+      "Comments are unavailable because the current backend does not provide a comment API."
+    );
   };
 
   if (authLoading) {
@@ -316,6 +322,43 @@ export default function SkillFeedPage() {
         </button>
       </div>
 
+      {/* Feed Tabs */}
+      <div className="glass-panel rounded-2xl border border-slate-800 p-1.5">
+        <div className="grid grid-cols-3 gap-1">
+          {FEED_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const selected = activeTab === tab.value;
+
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setActiveTab(tab.value);
+                }}
+                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+                  selected
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/70"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Backend limitation notice */}
+      <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+        <p className="text-xs text-blue-200">
+          Skill Feed API, Like API and Follow API are not currently exposed
+          by the backend. Available post creation remains session-only.
+        </p>
+      </div>
+
       {/* Search */}
       <div className="glass-panel rounded-2xl border border-slate-800 p-3">
         <input
@@ -346,7 +389,7 @@ export default function SkillFeedPage() {
         >
           <div>
             <h2 className="text-lg font-bold text-white">
-              Share your progress
+              Share your learning
             </h2>
 
             <p className="text-xs text-slate-500 mt-1">
@@ -402,7 +445,7 @@ export default function SkillFeedPage() {
           {/* Content */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">
-              What happened?
+              What did you learn today?
             </label>
 
             <textarea
@@ -454,14 +497,14 @@ export default function SkillFeedPage() {
           </div>
 
           <p className="text-[10px] text-slate-600">
-            Post persistence will use the backend once a post API is available.
+            This post is session-only until the backend provides a post API.
           </p>
         </form>
       )}
 
       {/* Feed */}
       {filteredPosts.length === 0 ? (
-        <EmptyFeed />
+        <EmptyFeed activeTab={activeTab} />
       ) : (
         <div className="space-y-4">
           {filteredPosts.map((post) => (
@@ -480,12 +523,7 @@ export default function SkillFeedPage() {
 
                   <div className="min-w-0">
                     <Link
-                      to={
-                        post.authorId ===
-                        (user._id || user.id || "current-user")
-                          ? "/profile"
-                          : `/profile/${post.authorId}`
-                      }
+                      to="/profile"
                       className="text-sm font-bold text-white hover:text-purple-300 transition truncate block"
                     >
                       {post.authorName}
@@ -511,10 +549,11 @@ export default function SkillFeedPage() {
                   <button
                     type="button"
                     onClick={() => handleFollow(post.authorId)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:text-white hover:border-purple-500/50 text-[10px] font-bold shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-500 text-[10px] font-bold shrink-0 cursor-not-allowed"
+                    title="Follow API unavailable"
                   >
                     <UserPlus className="w-3 h-3" />
-                    Follow
+                    Follow unavailable
                   </button>
                 )}
               </div>
@@ -545,11 +584,12 @@ export default function SkillFeedPage() {
               )}
 
               {/* Actions */}
-              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center gap-5">
+              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center gap-5 flex-wrap">
                 <button
                   type="button"
                   onClick={() => handleLike(post.id)}
-                  className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-pink-400 transition"
+                  className="inline-flex items-center gap-2 text-xs text-slate-500 cursor-not-allowed"
+                  title="Like API unavailable"
                 >
                   <Heart className="w-4 h-4" />
                   {post.likes}
@@ -557,12 +597,9 @@ export default function SkillFeedPage() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setError(
-                      "Comments are not available because the current backend does not provide a comment API."
-                    )
-                  }
-                  className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-blue-400 transition"
+                  onClick={handleComments}
+                  className="inline-flex items-center gap-2 text-xs text-slate-500 cursor-not-allowed"
+                  title="Comment API unavailable"
                 >
                   <MessageCircle className="w-4 h-4" />
                   {post.comments}

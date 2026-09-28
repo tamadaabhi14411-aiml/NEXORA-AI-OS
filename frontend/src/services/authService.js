@@ -1,7 +1,7 @@
-import API from "../api/api";
+import api from "./api";
 
 const login = async ({ email, password }) => {
-  const response = await API.post("/auth/login", {
+  const response = await api.post("/auth/login", {
     email,
     password,
   });
@@ -10,7 +10,7 @@ const login = async ({ email, password }) => {
 };
 
 const signup = async ({ name, email, password }) => {
-  const response = await API.post("/auth/register", {
+  const response = await api.post("/auth/register", {
     fullName: name,
     email,
     password,
@@ -20,7 +20,7 @@ const signup = async ({ name, email, password }) => {
 };
 
 const getProfile = async () => {
-  const response = await API.get("/auth/profile");
+  const response = await api.get("/auth/profile");
 
   return response.data;
 };
