@@ -21,6 +21,9 @@ import ExploreProjectsPage from "../pages/ExploreProjectsPage";
 import CreateProjectPage from "../pages/CreateProjectPage";
 import ProjectDetailsPage from "../pages/ProjectDetailsPage";
 
+import SkillProofsPage from "../pages/SkillProofsPage";
+import SkillProofDetailsPage from "../pages/SkillProofDetailsPage";
+
 import ProtectedRoute from "./ProtectedRoute";
 
 function AppRouter() {
@@ -74,6 +77,25 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <UserProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Skill Proofs */}
+        <Route
+          path="/profile/skill-proofs"
+          element={
+            <ProtectedRoute>
+              <SkillProofsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/skill-proof/:proofId"
+          element={
+            <ProtectedRoute>
+              <SkillProofDetailsPage />
             </ProtectedRoute>
           }
         />
