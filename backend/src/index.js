@@ -20,6 +20,7 @@ import skillRoutes from "./routes/skillRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import skillProofRoutes from "./routes/skillProofRoutes.js";
 
+
 // Fix MongoDB Atlas SRV DNS issue
 dns.setServers([
   "8.8.8.8",
@@ -70,6 +71,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/skills", skillProofRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/career", resumeRoutes);
 
 // =========================
 // Root Route
