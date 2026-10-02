@@ -1,3 +1,4 @@
+@'
 import mongoose from "mongoose";
 
 const skillProofSchema = new mongoose.Schema(
@@ -57,18 +58,36 @@ const skillProofSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+
+    // Kept for compatibility with older proof records
+    community: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Community",
+      default: null,
+    },
+
+    contribution: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "completed"],
+      default: "completed",
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Prevent accidental duplicate proof records
 skillProofSchema.index({
   user: 1,
   skill: 1,
-  type: 1,
-  title: 1,
+  createdAt: -1,
 });
 
 export default mongoose.model("SkillProof", skillProofSchema);
+'@ | Set-Content src\models\SkillProof.js
