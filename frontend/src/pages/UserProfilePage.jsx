@@ -34,6 +34,25 @@ export default function UserProfilePage() {
   const [evidenceText, setEvidenceText] = useState("");
   const [skillPost, setSkillPost] = useState(null);
 
+  useEffect(() => {
+    try {
+      const savedSkillPost = localStorage.getItem("nexora_skill_post");
+
+      if (!savedSkillPost) {
+        return;
+      }
+
+      const parsedSkillPost = JSON.parse(savedSkillPost);
+
+      if (parsedSkillPost && typeof parsedSkillPost === "object") {
+        setSkillPost(parsedSkillPost);
+      }
+    } catch (error) {
+      console.error("Unable to restore Skill Post:", error);
+      localStorage.removeItem("nexora_skill_post");
+    }
+  }, []);
+
   const [skillProofs, setSkillProofs] = useState([]);
   const [skillProofLoading, setSkillProofLoading] = useState(true);
   const [skillProofError, setSkillProofError] = useState("");
@@ -141,12 +160,20 @@ export default function UserProfilePage() {
       return;
     }
 
-    setSkillPost({
+    const newSkillPost = {
       learning: learningText.trim(),
       built: builtText.trim(),
       skill: skillText.trim(),
       evidence: evidenceText.trim(),
-    });
+      createdAt: new Date().toISOString(),
+    };
+
+    setSkillPost(newSkillPost);
+
+    localStorage.setItem(
+      "nexora_skill_post",
+      JSON.stringify(newSkillPost)
+    );
 
     setLearningText("");
     setBuiltText("");
@@ -958,3 +985,4 @@ export default function UserProfilePage() {
     </div>
   );
 }
+
