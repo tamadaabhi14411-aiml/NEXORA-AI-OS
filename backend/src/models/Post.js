@@ -28,6 +28,13 @@ const postSchema = new mongoose.Schema(
       index: true,
     },
 
+    community: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Community",
+      default: null,
+      index: true,
+    },
+
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
@@ -61,5 +68,6 @@ const postSchema = new mongoose.Schema(
 postSchema.index({ createdAt: -1 });
 postSchema.index({ user: 1, createdAt: -1 });
 postSchema.index({ skill: 1, createdAt: -1 });
+postSchema.index({ community: 1, createdAt: -1 });
 
 export default mongoose.model("Post", postSchema);
