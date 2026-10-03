@@ -1,44 +1,50 @@
 import express from "express";
+
 import {
   createPost,
-  getFeed,
+  getPosts,
   getPostById,
-  updatePost,
   deletePost,
   likePost,
   unlikePost,
-  addComment,
   getComments,
+  createComment,
+  deleteComment,
+  savePost,
+  unsavePost,
 } from "../controllers/postController.js";
+
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Get skill feed
-router.get("/", getFeed);
+// Feed
+router.get("/", authMiddleware, getPosts);
 
 // Create post
 router.post("/", authMiddleware, createPost);
 
-// Get single post
-router.get("/:postId", getPostById);
-
-// Update post
-router.put("/:postId", authMiddleware, updatePost);
+// Single post
+router.get("/:id", getPostById);
 
 // Delete post
-router.delete("/:postId", authMiddleware, deletePost);
+router.delete("/:id", authMiddleware, deletePost);
 
-// Like post
-router.post("/:postId/like", authMiddleware, likePost);
+// Like / Unlike
+router.post("/:id/like", authMiddleware, likePost);
+router.delete("/:id/like", authMiddleware, unlikePost);
 
-// Unlike post - existing API kept for compatibility
-router.delete("/:postId/like", authMiddleware, unlikePost);
+// Comments
+router.get("/:id/comments", getComments);
+router.post("/:id/comments", authMiddleware, createComment);
+router.delete(
+  "/:postId/comments/:commentId",
+  authMiddleware,
+  deleteComment
+);
 
-// Add comment
-router.post("/:postId/comment", authMiddleware, addComment);
-
-// Get comments
-router.get("/:postId/comments", getComments);
+// Save / Unsave
+router.post("/:id/save", authMiddleware, savePost);
+router.delete("/:id/save", authMiddleware, unsavePost);
 
 export default router;

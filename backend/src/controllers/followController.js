@@ -10,7 +10,6 @@ export const followUser = async (req, res) => {
     const followerId = req.user._id;
     const { userId } = req.params;
 
-    // Cannot follow yourself
     if (followerId.toString() === userId) {
       return res.status(400).json({
         success: false,
@@ -18,7 +17,6 @@ export const followUser = async (req, res) => {
       });
     }
 
-    // Check target user
     const targetUser = await User.findById(userId);
 
     if (!targetUser) {
@@ -28,7 +26,6 @@ export const followUser = async (req, res) => {
       });
     }
 
-    // Check existing follow
     const existingFollow = await Follow.findOne({
       follower: followerId,
       following: userId,
@@ -41,22 +38,15 @@ export const followUser = async (req, res) => {
       });
     }
 
-    // Create follow relationship
     await Follow.create({
       follower: followerId,
       following: userId,
     });
 
-    // Get updated counts
-    const [followerCount, followingCount] =
-      await Promise.all([
-        Follow.countDocuments({
-          following: userId,
-        }),
-        Follow.countDocuments({
-          follower: followerId,
-        }),
-      ]);
+    const [followerCount, followingCount] = await Promise.all([
+      Follow.countDocuments({ following: userId }),
+      Follow.countDocuments({ follower: followerId }),
+    ]);
 
     return res.status(201).json({
       success: true,
@@ -86,7 +76,6 @@ export const unfollowUser = async (req, res) => {
     const followerId = req.user._id;
     const { userId } = req.params;
 
-    // Cannot unfollow yourself
     if (followerId.toString() === userId) {
       return res.status(400).json({
         success: false,
@@ -106,16 +95,10 @@ export const unfollowUser = async (req, res) => {
       });
     }
 
-    // Get updated counts
-    const [followerCount, followingCount] =
-      await Promise.all([
-        Follow.countDocuments({
-          following: userId,
-        }),
-        Follow.countDocuments({
-          follower: followerId,
-        }),
-      ]);
+    const [followerCount, followingCount] = await Promise.all([
+      Follow.countDocuments({ following: userId }),
+      Follow.countDocuments({ follower: followerId }),
+    ]);
 
     return res.status(200).json({
       success: true,
@@ -144,9 +127,7 @@ export const getFollowCounts = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Check target user
-    const user = await User.findById(userId)
-      .select("_id");
+    const user = await User.findById(userId).select("_id");
 
     if (!user) {
       return res.status(404).json({
@@ -155,15 +136,10 @@ export const getFollowCounts = async (req, res) => {
       });
     }
 
-    const [followerCount, followingCount] =
-      await Promise.all([
-        Follow.countDocuments({
-          following: userId,
-        }),
-        Follow.countDocuments({
-          follower: userId,
-        }),
-      ]);
+    const [followerCount, followingCount] = await Promise.all([
+      Follow.countDocuments({ following: userId }),
+      Follow.countDocuments({ follower: userId }),
+    ]);
 
     return res.status(200).json({
       success: true,
@@ -180,6 +156,86 @@ export const getFollowCounts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to retrieve follow counts.",
+    });
+  }
+};
+
+// ============================================
+// GET FOLLOWERS
+// ============================================
+
+export const getFollowers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select("_id");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const followers = await Follow.find({
+      following: userId,
+    })
+      .populate("follower", "fullName email avatar role xp level")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const data = followers.map((item) => item.follower);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    console.error("Get Followers Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve followers.",
+    });
+  }
+};
+
+// ============================================
+// GET FOLLOWING
+// ============================================
+
+export const getFollowing = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select("_id");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const following = await Follow.find({
+      follower: userId,
+    })
+      .populate("following", "fullName email avatar role xp level")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const data = following.map((item) => item.following);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    console.error("Get Following Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve following.",
     });
   }
 };
