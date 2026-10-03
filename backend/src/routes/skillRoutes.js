@@ -4,31 +4,54 @@ import {
   createSkill,
   getSkills,
   getSkillById,
-  followSkill,
-  unfollowSkill,
-  getUserSkills,
+  updateSkill,
+  deleteSkill,
 } from "../controllers/skillController.js";
+
+import {
+  createSkillProof,
+  getSkillProofs,
+  deleteSkillProof,
+} from "../controllers/skillProofController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// ===============================
+// SKILLS
+// ===============================
+
+// Get authenticated user's skills
+router.get("/", authMiddleware, getSkills);
+
 // Create skill
 router.post("/", authMiddleware, createSkill);
 
-// Get all / search skills
-router.get("/", getSkills);
+// Get single owned skill
+router.get("/:id", authMiddleware, getSkillById);
 
-// Get user's skills
-router.get("/user/:id", getUserSkills);
+// Update owned skill
+router.put("/:id", authMiddleware, updateSkill);
 
-// Get single skill
-router.get("/:id", getSkillById);
+// Delete owned skill + related proofs
+router.delete("/:id", authMiddleware, deleteSkill);
 
-// Follow skill
-router.post("/:id/follow", authMiddleware, followSkill);
+// ===============================
+// SKILL PROOFS
+// ===============================
 
-// Remove / unfollow skill
-router.delete("/:id/follow", authMiddleware, unfollowSkill);
+// Create proof for owned skill
+router.post("/:id/proofs", authMiddleware, createSkillProof);
+
+// Get proofs for owned skill
+router.get("/:id/proofs", authMiddleware, getSkillProofs);
+
+// Delete proof belonging to owned skill
+router.delete(
+  "/:skillId/proofs/:proofId",
+  authMiddleware,
+  deleteSkillProof
+);
 
 export default router;

@@ -1,3 +1,4 @@
+@'
 import mongoose from "mongoose";
 
 const skillSchema = new mongoose.Schema(
@@ -27,6 +28,7 @@ const skillSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Kept for existing NEXORA skill-follow functionality
     followers: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -39,10 +41,11 @@ const skillSchema = new mongoose.Schema(
   }
 );
 
-// Same user cannot have the same skill twice
+// Same user should not create duplicate skills
 skillSchema.index(
   { user: 1, name: 1 },
   { unique: true }
 );
 
 export default mongoose.model("Skill", skillSchema);
+'@ | Set-Content src\models\Skill.js

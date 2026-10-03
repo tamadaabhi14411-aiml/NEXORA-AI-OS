@@ -1,18 +1,34 @@
 import express from "express";
 
 import {
-  getUserOrSkillProof,
-  getMySkillProofs,
+  createSkillProof,
+  getSkillProofs,
+  deleteSkillProof,
 } from "../controllers/skillProofController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// My skill proofs
-router.get("/proofs/me", authMiddleware, getMySkillProofs);
+// Create proof for a skill
+router.post(
+  "/:id/proofs",
+  authMiddleware,
+  createSkillProof
+);
 
-// Public user proofs OR skill proof details
-router.get("/proofs/:identifier", getUserOrSkillProof);
+// Get proofs for a skill
+router.get(
+  "/:id/proofs",
+  authMiddleware,
+  getSkillProofs
+);
+
+// Delete proof
+router.delete(
+  "/:skillId/proofs/:proofId",
+  authMiddleware,
+  deleteSkillProof
+);
 
 export default router;

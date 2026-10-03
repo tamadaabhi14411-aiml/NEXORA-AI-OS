@@ -70,6 +70,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/skills", skillProofRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/career", resumeRoutes);
 
 // =========================
 // Root Route

@@ -1,21 +1,45 @@
+@'
+import mongoose from "mongoose";
 import Skill from "../models/Skill.js";
 import SkillProof from "../models/SkillProof.js";
+import User from "../models/User.js";
 
 const getUserId = (req) => req.user?.id || req.user?._id;
 
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// ==========================================
 // GET MY SKILLS
+// GET /api/skills
+// ==========================================
 export const getSkills = async (req, res) => {
   try {
     const userId = getUserId(req);
+    const { search } = req.query;
 
-    const skills = await Skill.find({ user: userId })
-      .select("_id user name level description createdAt updatedAt")
-      .sort({ createdAt: -1 });
+    const filter = { user: userId };
+
+    if (search && search.trim()) {
+      filter.name = {
+        $regex: search.trim(),
+        $options: "i",
+      };
+    }
+
+    const skills = await Skill.find(filter)
+      .select("_id user name level description followers createdAt updatedAt")
+      .sort({ name: 1 })
+      .lean();
+
+    const data = skills.map((skill) => ({
+      ...skill,
+      followerCount: skill.followers?.length || 0,
+    }));
 
     return res.status(200).json({
       success: true,
       message: "Skills retrieved successfully.",
-      data: skills,
+      data,
     });
   } catch (error) {
     console.error("Get Skills Error:", error);
@@ -27,7 +51,10 @@ export const getSkills = async (req, res) => {
   }
 };
 
+// ==========================================
 // CREATE SKILL
+// POST /api/skills
+// ==========================================
 export const createSkill = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -40,19 +67,26 @@ export const createSkill = async (req, res) => {
       });
     }
 
-    const validLevels = ["Beginner", "Intermediate", "Advanced"];
+    const allowedLevels = [
+      "Beginner",
+      "Intermediate",
+      "Advanced",
+    ];
 
-    if (level && !validLevels.includes(level)) {
+    const skillLevel = level || "Beginner";
+
+    if (!allowedLevels.includes(skillLevel)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid skill level.",
+        message:
+          "Skill level must be Beginner, Intermediate, or Advanced.",
       });
     }
 
     const existingSkill = await Skill.findOne({
       user: userId,
       name: {
-        $regex: `^${name.trim()}$`,
+        $regex: `^${name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
         $options: "i",
       },
     });
@@ -68,7 +102,7 @@ export const createSkill = async (req, res) => {
     const skill = await Skill.create({
       user: userId,
       name: name.trim(),
-      level: level || "Beginner",
+      level: skillLevel,
       description: description?.trim() || "",
     });
 
@@ -80,6 +114,13 @@ export const createSkill = async (req, res) => {
   } catch (error) {
     console.error("Create Skill Error:", error);
 
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have this skill.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Failed to create skill.",
@@ -87,15 +128,25 @@ export const createSkill = async (req, res) => {
   }
 };
 
+// ==========================================
 // GET SINGLE MY SKILL
+// GET /api/skills/:id
+// ==========================================
 export const getSkillById = async (req, res) => {
   try {
+    const { id } = req.params;
     const userId = getUserId(req);
 
-    const skill = await Skill.findOne({
-      _id: req.params.id,
-      user: userId,
-    });
+    if (!isValidId(id)) {
+      return res.status(404).json({
+        success: false,
+        message: "Skill not found.",
+      });
+    }
+
+    const skill = await Skill.findById(id)
+      .select("_id user name level description followers createdAt updatedAt")
+      .lean();
 
     if (!skill) {
       return res.status(404).json({
@@ -104,10 +155,20 @@ export const getSkillById = async (req, res) => {
       });
     }
 
+    if (skill.user.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to access this skill.",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Skill retrieved successfully.",
-      data: skill,
+      data: {
+        ...skill,
+        followerCount: skill.followers?.length || 0,
+      },
     });
   } catch (error) {
     console.error("Get Skill Error:", error);
@@ -119,25 +180,24 @@ export const getSkillById = async (req, res) => {
   }
 };
 
+// ==========================================
 // UPDATE SKILL
+// PUT /api/skills/:id
+// ==========================================
 export const updateSkill = async (req, res) => {
   try {
+    const { id } = req.params;
     const userId = getUserId(req);
     const { name, level, description } = req.body;
 
-    const validLevels = ["Beginner", "Intermediate", "Advanced"];
-
-    if (level && !validLevels.includes(level)) {
-      return res.status(400).json({
+    if (!isValidId(id)) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid skill level.",
+        message: "Skill not found.",
       });
     }
 
-    const skill = await Skill.findOne({
-      _id: req.params.id,
-      user: userId,
-    });
+    const skill = await Skill.findById(id);
 
     if (!skill) {
       return res.status(404).json({
@@ -146,27 +206,18 @@ export const updateSkill = async (req, res) => {
       });
     }
 
+    if (skill.user.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to modify this skill.",
+      });
+    }
+
     if (name !== undefined) {
       if (!name.trim()) {
         return res.status(400).json({
           success: false,
-          message: "Skill name is required.",
-        });
-      }
-
-      const duplicate = await Skill.findOne({
-        user: userId,
-        _id: { $ne: skill._id },
-        name: {
-          $regex: `^${name.trim()}$`,
-          $options: "i",
-        },
-      });
-
-      if (duplicate) {
-        return res.status(409).json({
-          success: false,
-          message: "You already have this skill.",
+          message: "Skill name cannot be empty.",
         });
       }
 
@@ -174,6 +225,16 @@ export const updateSkill = async (req, res) => {
     }
 
     if (level !== undefined) {
+      if (
+        !["Beginner", "Intermediate", "Advanced"].includes(level)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Skill level must be Beginner, Intermediate, or Advanced.",
+        });
+      }
+
       skill.level = level;
     }
 
@@ -191,6 +252,13 @@ export const updateSkill = async (req, res) => {
   } catch (error) {
     console.error("Update Skill Error:", error);
 
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have this skill.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Failed to update skill.",
@@ -198,15 +266,23 @@ export const updateSkill = async (req, res) => {
   }
 };
 
+// ==========================================
 // DELETE SKILL
+// DELETE /api/skills/:id
+// ==========================================
 export const deleteSkill = async (req, res) => {
   try {
+    const { id } = req.params;
     const userId = getUserId(req);
 
-    const skill = await Skill.findOne({
-      _id: req.params.id,
-      user: userId,
-    });
+    if (!isValidId(id)) {
+      return res.status(404).json({
+        success: false,
+        message: "Skill not found.",
+      });
+    }
+
+    const skill = await Skill.findById(id);
 
     if (!skill) {
       return res.status(404).json({
@@ -215,20 +291,26 @@ export const deleteSkill = async (req, res) => {
       });
     }
 
-    // Delete only proofs belonging to this user and skill
+    if (skill.user.toString() !== userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this skill.",
+      });
+    }
+
     await SkillProof.deleteMany({
       skill: skill._id,
       user: userId,
     });
 
-    await Skill.deleteOne({
-      _id: skill._id,
-      user: userId,
-    });
+    await skill.deleteOne();
 
     return res.status(200).json({
       success: true,
       message: "Skill and related proofs deleted successfully.",
+      data: {
+        skillId: id,
+      },
     });
   } catch (error) {
     console.error("Delete Skill Error:", error);
@@ -240,12 +322,15 @@ export const deleteSkill = async (req, res) => {
   }
 };
 
+// ==========================================
 // FOLLOW SKILL - EXISTING FUNCTIONALITY
+// ==========================================
 export const followSkill = async (req, res) => {
   try {
+    const { id } = req.params;
     const userId = getUserId(req);
 
-    const skill = await Skill.findById(req.params.id);
+    const skill = await Skill.findById(id);
 
     if (!skill) {
       return res.status(404).json({
@@ -255,7 +340,8 @@ export const followSkill = async (req, res) => {
     }
 
     const alreadyFollowing = skill.followers.some(
-      (id) => id.toString() === userId.toString()
+      (followerId) =>
+        followerId.toString() === userId.toString()
     );
 
     if (alreadyFollowing) {
@@ -286,12 +372,15 @@ export const followSkill = async (req, res) => {
   }
 };
 
-// UNFOLLOW SKILL - EXISTING FUNCTIONALITY
+// ==========================================
+// UNFOLLOW SKILL
+// ==========================================
 export const unfollowSkill = async (req, res) => {
   try {
+    const { id } = req.params;
     const userId = getUserId(req);
 
-    const skill = await Skill.findById(req.params.id);
+    const skill = await Skill.findById(id);
 
     if (!skill) {
       return res.status(404).json({
@@ -300,10 +389,19 @@ export const unfollowSkill = async (req, res) => {
       });
     }
 
-    skill.followers = skill.followers.filter(
-      (id) => id.toString() !== userId.toString()
+    const followerIndex = skill.followers.findIndex(
+      (followerId) =>
+        followerId.toString() === userId.toString()
     );
 
+    if (followerIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "You are not following this skill.",
+      });
+    }
+
+    skill.followers.splice(followerIndex, 1);
     await skill.save();
 
     return res.status(200).json({
@@ -315,7 +413,7 @@ export const unfollowSkill = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Unfollow Skill Error:", error);
+    console.error("Remove Skill Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -324,21 +422,51 @@ export const unfollowSkill = async (req, res) => {
   }
 };
 
-// GET USER SKILLS
+// ==========================================
+// GET USER SKILLS - EXISTING FUNCTIONALITY
+// ==========================================
 export const getUserSkills = async (req, res) => {
   try {
-    const userId = req.params.id;
+    const { id } = req.params;
+
+    if (!isValidId(id)) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const user = await User.findById(id)
+      .select("_id fullName")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
 
     const skills = await Skill.find({
-      user: userId,
+      $or: [
+        { user: id },
+        { followers: id },
+      ],
     })
-      .select("_id name level description createdAt updatedAt")
-      .sort({ name: 1 });
+      .select("_id user name level description createdAt")
+      .sort({ name: 1 })
+      .lean();
 
     return res.status(200).json({
       success: true,
       message: "User skills retrieved successfully.",
-      data: skills,
+      data: {
+        user: {
+          _id: user._id,
+          fullName: user.fullName,
+        },
+        skills,
+      },
     });
   } catch (error) {
     console.error("Get User Skills Error:", error);
@@ -349,3 +477,4 @@ export const getUserSkills = async (req, res) => {
     });
   }
 };
+'@ | Set-Content src\controllers\skillController.js
